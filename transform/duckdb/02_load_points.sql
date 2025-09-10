@@ -81,6 +81,18 @@ SELECT DISTINCT
     "Alt Kategori" AS subtype
 FROM raw.health_src;
 
+CREATE OR REPLACE VIEW raw.museums AS
+SELECT DISTINCT
+    "Muze Adi" AS name,
+    "Adres"  AS address_text,
+    lon,
+    lat,
+    ST_AsText(ST_Point(CAST(lon AS DOUBLE), CAST(lat AS DOUBLE))) AS geom_wkt,
+    'museum' AS poi_type,
+    'ibb_museum' AS source,
+FROM raw.museums_src;;
+
+
 
 -- 3) Ham noktaları tek tabloda topla
 CREATE OR REPLACE TABLE stg.poi_points_raw AS
@@ -99,5 +111,5 @@ SELECT name, NULL, NULL, NULL, lon, lat, geom_wkt, source, poi_type FROM raw.kio
 UNION ALL
 SELECT name, NULL, NULL, NULL, lon, lat, geom_wkt, source, poi_type FROM raw.theaters
 UNION ALL
-SELECT name, NULL, address_text, subtype, lon, lat, geom_wkt, source, poi_type FROM raw.health,
+SELECT name, NULL, address_text, NULL, lon, lat, geom_wkt, source, poi_type FROM raw.museums,
 

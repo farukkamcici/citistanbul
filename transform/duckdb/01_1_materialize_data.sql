@@ -34,3 +34,6 @@ SELECT * FROM read_csv(
 
 CREATE OR REPLACE TABLE raw.health_src AS
 SELECT * FROM read_csv('data/raw/csv_addresses/health_inst.csv');
+
+CREATE OR REPLACE TABLE raw.museums_src AS
+SELECT * FROM read_csv('data/raw/csv_addresses/museums_geocoded.csv');
