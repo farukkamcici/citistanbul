@@ -10,8 +10,8 @@ SELECT
   (
     SELECT d.district_id
     FROM fixed d
-    ORDER BY ST_Distance(ST_GeomFromText(p.geom_wkt), d.geom)
+    ORDER BY ST_Distance(p.geom, d.geom)
     LIMIT 1
   ) AS snapped_district_id
-FROM stg.pois p
+FROM stg.pois_pcd p
 WHERE p.district_id IS NULL;

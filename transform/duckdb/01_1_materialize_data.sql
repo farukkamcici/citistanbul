@@ -37,3 +37,12 @@ SELECT * FROM read_csv('data/raw/csv_addresses/health_inst.csv');
 
 CREATE OR REPLACE TABLE raw.museums_src AS
 SELECT * FROM read_csv('data/raw/csv_addresses/museums_geocoded.csv');
+
+CREATE OR REPLACE TABLE raw.green_areas_src AS
+SELECT * FROM ST_READ('data/raw/geojson_polygons/green_areas.geojson');
+
+CREATE OR REPLACE TABLE raw.pedest_areas_src AS
+SELECT * FROM ST_READ('data/raw/geojson_polygons/pedestrian_areas.geojson');
+
+CREATE OR REPLACE TABLE raw.bike_lanes_src AS
+SELECT * FROM ST_READ('data/raw/geojson_lines/bike_lanes.geojson');;

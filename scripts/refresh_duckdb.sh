@@ -1,4 +1,3 @@
-#!/bin/bash
 set -e  # hata olursa script dursun
 
 DB_PATH="data/interim/citistanbul.duckdb"
@@ -12,6 +11,7 @@ STEPS=(
   "05_pois_with_district.sql"
   "06_snap_missing_pois_step1.sql"
   "06_snap_missing_pois_step2.sql"
+  "07_normalize_areas_lines.sql"
 )
 
 for step in "${STEPS[@]}"; do
