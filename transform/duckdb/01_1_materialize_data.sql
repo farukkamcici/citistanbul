@@ -1,0 +1,36 @@
+LOAD spatial;
+
+CREATE SCHEMA IF NOT EXISTS raw;
+CREATE SCHEMA IF NOT EXISTS stg;
+
+-- 1) MATERIALIZE: dosyadan tabloya yaz
+CREATE OR REPLACE TABLE raw.public_toilets_src AS
+SELECT * FROM ST_READ('data/raw/geojson_points/public_toilets.geojson');
+
+CREATE OR REPLACE TABLE raw.micro_mobility_src AS
+SELECT * FROM ST_READ('data/raw/geojson_points/scooter_parking.geojson');
+
+CREATE OR REPLACE TABLE raw.metro_stations_src AS
+SELECT * FROM ST_READ('data/raw/geojson_points/metro_stations.geojson');
+
+CREATE OR REPLACE TABLE raw.ev_chargers_src AS
+SELECT * FROM ST_READ('data/raw/geojson_points/ev_chargers.geojson');
+
+CREATE OR REPLACE TABLE raw.kiosks_src AS
+SELECT * FROM read_csv(
+  'data/raw/csv_addresses/kiosks.csv',
+  delim=',',
+  header=true,
+  all_varchar=true
+);
+
+CREATE OR REPLACE TABLE raw.theaters_src AS
+SELECT * FROM read_csv(
+  'data/raw/csv_addresses/theaters.csv',
+  delim=',',
+  header=true,
+  all_varchar=true
+);
+
+CREATE OR REPLACE TABLE raw.health_src AS
+SELECT * FROM read_csv('data/raw/csv_addresses/health_inst.csv');

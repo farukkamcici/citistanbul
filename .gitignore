@@ -33,14 +33,14 @@ logs/
 *.sqlite
 
 # Postgres dumps
-*.sql
 *.dump
 
 # Data files
+/data/interim
+/data/raw
 /data/**/*.csv
 /data/**/*.json
 /data/**/*.geojson
-!data/seeds/   # if you want to keep dbt seeds
 
 # VSCode / IDE
 .vscode/
