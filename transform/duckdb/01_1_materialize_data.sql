@@ -45,4 +45,13 @@ CREATE OR REPLACE TABLE raw.pedest_areas_src AS
 SELECT * FROM ST_READ('data/raw/geojson_polygons/pedestrian_areas.geojson');
 
 CREATE OR REPLACE TABLE raw.bike_lanes_src AS
-SELECT * FROM ST_READ('data/raw/geojson_lines/bike_lanes.geojson');;
+SELECT * FROM ST_READ('data/raw/geojson_lines/bike_lanes.geojson');
+
+CREATE OR REPLACE TABLE raw.district_households AS
+SELECT * FROM read_csv('data/interim/csv_district_metrics/district_households_pcd.csv');
+
+CREATE OR REPLACE TABLE raw.district_housing AS
+SELECT * FROM read_csv('data/interim/csv_district_metrics/district_housing_prices_pcd.csv');
+
+CREATE OR REPLACE TABLE raw.district_population AS
+SELECT * FROM read_csv('data/interim/csv_district_metrics/district_population_pcd.csv');

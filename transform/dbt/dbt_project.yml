@@ -1,0 +1,20 @@
+name: 'citistanbul'
+version: '1.0'
+config-version: 2
+
+profile: 'citistanbul'
+
+model-paths: ["models"]
+
+on-run-start:
+  - "LOAD spatial;"
+
+models:
+  citistanbul:
+    stg:
+      +schema: stg
+      +materialized: view
+
+    marts:
+      +schema: mart
+      +materialized: table

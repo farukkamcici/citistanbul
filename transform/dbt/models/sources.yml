@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: districts_fix
+      - name: bike_lanes_pcd
+      - name: district_metrics
+      - name: green_areas_pcd
+      - name: pedestrian_areas_pcd
+      - name: pois_pcd

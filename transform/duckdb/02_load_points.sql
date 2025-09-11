@@ -149,7 +149,7 @@ FROM raw.pedest_areas_src
 WHERE MEVCUT_DURUM <> 'YAYALAŞTIRMA YOK';
 
 -- Collect all POI Points
-CREATE OR REPLACE TABLE stg.poi_points_raw AS
+CREATE OR REPLACE TABLE raw.poi_points_raw AS
 SELECT name, NULL::VARCHAR AS district_name, NULL::VARCHAR AS address_text, subtype, lon, lat, geom, source, poi_type FROM raw.bus_stops
 UNION ALL
 SELECT name, district_name, NULL, subtype, lon, lat, geom, source, poi_type FROM raw.public_toilets
@@ -169,13 +169,13 @@ UNION ALL
 SELECT name, NULL, address_text, NULL, lon, lat, geom, source, poi_type FROM raw.museums;
 
 -- Collect Green Areas
-CREATE OR REPLACE TABLE stg.green_areas_raw AS
+CREATE OR REPLACE TABLE raw.green_areas_raw AS
 SELECT * FROM raw.green_areas;
 
 -- Collect Bike Lanes
-CREATE OR REPLACE TABLE stg.bike_lanes_raw AS
+CREATE OR REPLACE TABLE raw.bike_lanes_raw AS
 SELECT * FROM raw.bike_lanes;
 
 -- Collect Pedestrian Areas
-CREATE OR REPLACE TABLE stg.pedestrian_areas_raw AS
+CREATE OR REPLACE TABLE raw.pedestrian_areas_raw AS
 SELECT * FROM raw.pedestrian_areas;

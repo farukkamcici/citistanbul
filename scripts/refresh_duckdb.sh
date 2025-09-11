@@ -12,6 +12,7 @@ STEPS=(
   "06_snap_missing_pois_step1.sql"
   "06_snap_missing_pois_step2.sql"
   "07_normalize_areas_lines.sql"
+  "08_agg_metrics.sql"
 )
 
 for step in "${STEPS[@]}"; do

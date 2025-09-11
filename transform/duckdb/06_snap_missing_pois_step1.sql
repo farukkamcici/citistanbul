@@ -1,9 +1,9 @@
 LOAD spatial;
 
 -- Null kalan POI’ler için nearest district hesapla
-CREATE OR REPLACE TABLE stg.pois_snapped AS
+CREATE OR REPLACE TABLE raw.pois_snapped AS
 WITH fixed AS (
-  SELECT * FROM stg.districts_fix
+  SELECT * FROM raw.districts_fix
 )
 SELECT
   p.poi_id,
@@ -13,5 +13,5 @@ SELECT
     ORDER BY ST_Distance(p.geom, d.geom)
     LIMIT 1
   ) AS snapped_district_id
-FROM stg.pois_pcd p
+FROM raw.pois_pcd p
 WHERE p.district_id IS NULL;
