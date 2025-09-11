@@ -11,4 +11,4 @@ CREATE OR REPLACE TABLE raw.district_metrics AS
        FROM raw.district_households h
        JOIN raw.district_population p ON h.district_name = p.district_name
        JOIN raw.district_housing ho ON h.district_name = ho.district_name
-       JOIN raw.districts_fix f ON h.district_name = f.district_name_tr;
+       JOIN raw.districts_fix f ON h.district_name = f.district_name;
