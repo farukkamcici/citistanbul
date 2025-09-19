@@ -1,0 +1,116 @@
+version: 2
+
+models:
+  - name: mart_district_metrics
+    description: "District-level metrics: population, household size, housing price and rent, green areas, bike lanes, pedestrian areas, and total district area."
+    columns:
+      - name: district_id
+        description: "Unique id of the district."
+        tests: [not_null, unique]
+      - name: district_name
+        description: "Name of the district."
+        tests: [not_null]
+      - name: population
+        description: "Total population of the district."
+        tests: [not_null]
+      - name: avg_price_m2
+        description: "Average housing price per square meter."
+      - name: avg_rent
+        description: "Average rent value."
+      - name: green_area_m2
+        description: "Total green area in square meters."
+      - name: bike_lane_km
+        description: "Total bike lane length in kilometers."
+      - name: pedestrian_length_m
+        description: "Total pedestrian area length in meters."
+      - name: area_km2
+        description: "Total district area in square kilometers."
+
+  - name: mart_district_scores
+    description: "Derived scores for districts: density and per capita metrics."
+    columns:
+      - name: district_id
+        description: "Unique id of the district."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('mart_district_metrics')
+              field: district_id
+      - name: green_per_capita_m2
+        description: "Green area per resident in square meters."
+      - name: bike_lane_density
+        description: "Bike lane length per square kilometer."
+      - name: pedestrian_length_density
+        description: "Pedestrian length per square kilometer."
+      - name: total_pois
+        description: "Total number of POIs in the district."
+
+  - name: mart_district_rankings
+    description: "Rankings of districts by population, housing, environment, and mobility indicators."
+    columns:
+      - name: district_id
+        description: "Unique id of the district."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('mart_district_metrics')
+              field: district_id
+      - name: rank_population
+        description: "Ranking by population size (1 = highest)."
+      - name: rank_household_size
+        description: "Ranking by household size."
+      - name: rank_rent_affordability
+        description: "Ranking by average rent (lower rent = better rank)."
+      - name: rank_house_price_affordability
+        description: "Ranking by housing price (lower price = better rank)."
+      - name: rank_total_green_area
+        description: "Ranking by total green area."
+      - name: rank_green_per_capita
+        description: "Ranking by green space per capita."
+      - name: rank_bike_lane_density
+        description: "Ranking by bike lane density."
+      - name: rank_pedestrian_density
+        description: "Ranking by pedestrian density."
+      - name: env_score
+        description: "Composite score for environment."
+      - name: mobility_score
+        description: "Composite score for mobility."
+      - name: housing_score
+        description: "Composite score for housing."
+      - name: rank_overall
+        description: "Overall ranking of the district."
+
+  - name: mart_poi_summary
+    description: "District-level summary of selected points of interest (POI) categories."
+    columns:
+      - name: district_id
+        description: "Unique id of the district."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('mart_district_metrics')
+              field: district_id
+      - name: total_pois
+        description: "Total number of POIs in the district."
+      - name: metro_station_count
+        description: "Number of metro stations."
+      - name: bus_stop_count
+        description: "Number of bus stops."
+      - name: tram_station_count
+        description: "Number of tram stations."
+      - name: ev_charger_count
+        description: "Number of EV chargers."
+      - name: health_count
+        description: "Number of health facilities."
+      - name: kiosk_count
+        description: "Number of kiosks."
+      - name: bike_parking_count
+        description: "Number of bike parking places."
+      - name: micro_mobility_parking_count
+        description: "Number of micro mobility parking places."
+      - name: museum_count
+        description: "Number of museums."
+      - name: theater_count
+        description: "Number of theaters."
+      - name: toilet_count
+        description: "Number of public toilets."

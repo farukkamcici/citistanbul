@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: stg_bike_lanes
+    description: "Staging table for bike lanes intersected with districts. Length in km."
+    columns:
+      - name: district_id
+        description: "District id from districts_fix."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_districts')
+              field: district_id
+      - name: length_km
+        description: "Bike lane segment length in kilometers."
+        tests: [not_null]
+
+  - name: stg_district_metrics
+    description: "Staging table for population, household, housing price and rent by district."
+    columns:
+      - name: district_id
+        description: "District id."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('stg_districts')
+              field: district_id
+      - name: population
+        description: "Population count."
+        tests: [not_null]
+      - name: household_size
+        description: "Average household size."
+        tests: [not_null]
+
+  - name: stg_districts
+    description: "Staging table for Istanbul district boundaries (MultiPolygon, EPSG:4326)."
+    columns:
+      - name: district_id
+        description: "Unique id of the district."
+        tests: [not_null, unique]
+      - name: district_name
+        description: "Name of the district."
+        tests: [not_null]
+
+  - name: stg_green_areas
+    description: "Staging table for green areas intersected with districts. Area in square meters."
+    columns:
+      - name: district_id
+        description: "District id."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_districts')
+              field: district_id
+      - name: area_m2
+        description: "Area size in square meters."
+        tests: [not_null]
+
+  - name: stg_pedestrian_areas
+    description: "Staging table for pedestrian areas intersected with districts. Length in meters."
+    columns:
+      - name: district_id
+        description: "District id."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_districts')
+              field: district_id
+      - name: length_m
+        description: "Length in meters."
+        tests: [not_null]
+
+  - name: stg_pois
+    description: "Staging table for points of interest assigned to districts."
+    columns:
+      - name: poi_id
+        description: "Id of the POI."
+        tests: [not_null]
+      - name: district_id
+        description: "District id of the POI."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_districts')
+              field: district_id
+      - name: poi_type
+        description: "Type of the POI."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['bus_stop','metro_station','tram_station','ev_charger','toilet','health','museum','theater','kiosk','bike_parking','micro_mobility_parking']

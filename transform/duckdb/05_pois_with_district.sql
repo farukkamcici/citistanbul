@@ -5,7 +5,8 @@ CREATE OR REPLACE VIEW raw.districts_fix AS
 SELECT
   d.district_id,
   d.district_name,
-  geom
+  d.geom,
+  ST_AsText(d.geom) AS geom_wkt
 FROM raw.dim_district d;
 
 -- Covers ile eşle
