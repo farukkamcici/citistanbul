@@ -2,6 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import Map from "react-map-gl/maplibre";
+import DistrictLayer from "@/components/DistrictLayer";
 
 export default function BaseMap() {
   return (
@@ -14,6 +15,8 @@ export default function BaseMap() {
       }}
       style={{ width: "100vw", height: "100vh" }}
       mapStyle="https://demotiles.maplibre.org/style.json"
-    />
+    >
+        <DistrictLayer />
+    </Map>
   );
 }
