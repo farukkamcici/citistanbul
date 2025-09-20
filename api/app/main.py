@@ -6,8 +6,24 @@ from .db import get_connection
 from .es import get_es_client
 from .utils import success_response, error_response, parse_bbox
 import json
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+
+origins = [
+    "http://localhost:3000",        # local Next.js
+    "http://127.0.0.1:3000",
+    "https://citistanbul.vercel.app", # Vercel prod
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # GLOBAL ERROR HANDLERS
 

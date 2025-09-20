@@ -6,13 +6,15 @@ import type { FeatureCollection } from "geojson";
 
 export default function DistrictLayer() {
   const [geojson, setGeojson] = useState<FeatureCollection | null>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
-    fetch("/api/districts")
-      .then((res) => res.json())
-      .then((resp) => setGeojson(resp.data))
-      .catch((err) => console.error("District fetch error:", err));
-  }, []);
+      fetch(`${API_URL}/districts`)
+        .then((res) => res.json())
+        .then((resp) => setGeojson(resp.data))
+        .catch((err) => console.error("District fetch error:", err));
+    }, []);
+
 
   if (!geojson) return null;
 
