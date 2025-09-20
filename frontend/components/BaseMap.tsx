@@ -150,7 +150,7 @@ export default function BaseMap() {
 
       {/* POI Legend */}
       {activeTypes.length > 0 && (
-        <div className="absolute bottom-4 right-4 bg-white/90 rounded-lg shadow-lg p-3 z-20">
+        <div className="absolute bottom-4 left-4 bg-white/90 rounded-lg shadow-lg p-3 z-20">
           <p className="text-xs font-semibold mb-2 text-gray-800">
             Gösterilen Katmanlar
           </p>

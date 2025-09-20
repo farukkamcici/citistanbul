@@ -196,7 +196,7 @@ export default function DistrictLayer() {
       {/* District info card */}
         {loadingDistrict && (
           <div className="
-            absolute bottom-0 left-0 w-full sm:w-80 sm:bottom-4 sm:left-4
+            absolute bottom-0 right-0 w-full sm:w-80 sm:bottom-4 sm:right-4
             bg-white/95 rounded-t-xl sm:rounded-xl shadow-xl border p-5 z-20
             flex items-center justify-center h-32
           ">
@@ -211,8 +211,8 @@ export default function DistrictLayer() {
       {!loadingDistrict && districtData && (
           <div
             className="
-              absolute bottom-0 left-0 w-full max-h-[50%] overflow-y-auto
-              sm:w-80 sm:bottom-4 sm:left-4 sm:max-h-none sm:overflow-visible
+              absolute bottom-0 right-0 w-full max-h-[50%] overflow-y-auto
+              sm:w-80 sm:bottom-4 sm:right-4 sm:max-h-none sm:overflow-visible
               bg-white/95 rounded-t-xl sm:rounded-xl
               shadow-xl border p-5 z-20
             "
