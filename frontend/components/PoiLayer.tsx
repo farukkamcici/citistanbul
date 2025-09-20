@@ -42,11 +42,12 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
   const [poiData, setPoiData] = useState<any>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // 1. API’den veri çek
   useEffect(() => {
     if (!poiType) return;
-    fetch(`http://207.154.235.183:8000/poi?poi_type=${poiType}`)
+    fetch(`${API_URL}/poi?poi_type=${poiType}`)
       .then((res) => res.json())
       .then((json) => setPoiData(json.data));
   }, [poiType]);
