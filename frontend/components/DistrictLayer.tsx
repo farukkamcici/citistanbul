@@ -20,22 +20,23 @@ export default function DistrictLayer() {
 
   return (
     <Source id="districts" type="geojson" data={geojson}>
-      <Layer
-        id="district-fill"
-        type="fill"
-        paint={{
-          "fill-color": "#4F9D9D",
-          "fill-opacity": 0.15,
-        }}
-      />
-      <Layer
-        id="district-outline"
-        type="line"
-        paint={{
-          "line-color": "#222222",
-          "line-width": 0.7,
-        }}
-      />
+<Layer
+  id="district-fill"
+  type="fill"
+  paint={{
+    "fill-color": "#84bbf3",
+    "fill-opacity": 0.25,
+  }}
+/>
+<Layer
+  id="district-outline"
+  type="line"
+  paint={{
+    "line-color": "#ffffff",
+    "line-width": 2,
+  }}
+/>
+
     </Source>
   );
 }
