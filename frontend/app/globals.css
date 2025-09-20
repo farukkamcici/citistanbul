@@ -26,3 +26,66 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.maplibregl-popup-content {
+  @apply bg-white text-gray-800 rounded-lg border border-gray-300 shadow-lg p-3 text-sm;
+  max-width: 240px;
+}
+
+.poi-title {
+  @apply font-semibold text-base mb-1;
+}
+
+.poi-district {
+  @apply text-gray-500 italic text-xs mb-2;
+}
+
+.poi-badges {
+  @apply flex flex-wrap gap-1 mb-1;
+}
+
+.poi-badge {
+  @apply inline-flex items-center bg-sky-100 text-sky-700 px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.poi-subtype {
+  @apply inline-flex items-center bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs;
+}
+
+.poi-address {
+  @apply text-gray-600 text-xs mt-1;
+}
+
+.poi-directions {
+  @apply block mt-3 text-center bg-blue-600 text-white rounded-md px-3 py-1 text-xs font-medium;
+}
+
+.layer-panel {
+  @apply bg-white/95 text-gray-800 rounded-lg shadow-md border border-gray-200;
+  @apply p-3 text-xs; /* daha kompakt */
+  backdrop-filter: blur(6px);
+}
+
+.layer-category {
+  @apply flex items-center justify-between mb-0.5;
+}
+
+.layer-category p {
+  @apply font-semibold text-gray-700 text-xs;
+}
+
+.layer-item {
+  @apply flex items-center space-x-2 cursor-pointer px-1 py-0.5 rounded-md text-xs;
+  transition: background-color 0.2s;
+}
+
+.layer-item:hover {
+  @apply bg-gray-100;
+}
+
+.layer-item input {
+  @apply accent-blue-600;
+}
+
+
+

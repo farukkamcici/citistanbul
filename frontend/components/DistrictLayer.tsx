@@ -94,7 +94,7 @@ export default function DistrictLayer() {
               ["get", metric],
               ...mConfig.stops.flatMap((v, i) => [v, mConfig.colors[i]])
             ],
-            "fill-opacity": 0.6,
+            "fill-opacity": 0.7,
           } as any);
 
   return (
