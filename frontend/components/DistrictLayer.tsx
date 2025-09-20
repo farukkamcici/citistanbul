@@ -24,16 +24,16 @@ export default function DistrictLayer() {
         id="district-fill"
         type="fill"
         paint={{
-          "fill-color": "#a4d1d1",
-          "fill-opacity": 0.2,
+          "fill-color": "#4F9D9D",
+          "fill-opacity": 0.15,
         }}
       />
       <Layer
         id="district-outline"
         type="line"
         paint={{
-          "line-color": "#000",
-          "line-width": 1,
+          "line-color": "#222222",
+          "line-width": 0.7,
         }}
       />
     </Source>

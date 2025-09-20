@@ -11,12 +11,12 @@ export default function BaseMap() {
       initialViewState={{
         longitude: 28.9744,
         latitude: 41.0128,
-        zoom: 8,
+        zoom: 9,
       }}
       style={{ width: "100vw", height: "100vh" }}
-      mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+      mapStyle={`https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
     >
-        <DistrictLayer />
+      <DistrictLayer />
     </Map>
   );
 }
