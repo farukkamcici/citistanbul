@@ -24,7 +24,7 @@ export default function DistrictLayer() {
         id="district-fill"
         type="fill"
         paint={{
-          "fill-color": "#088",
+          "fill-color": "#a4d1d1",
           "fill-opacity": 0.2,
         }}
       />

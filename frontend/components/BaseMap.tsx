@@ -14,7 +14,7 @@ export default function BaseMap() {
         zoom: 8,
       }}
       style={{ width: "100vw", height: "100vh" }}
-      mapStyle="https://demotiles.maplibre.org/style.json"
+      mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
     >
         <DistrictLayer />
     </Map>
