@@ -8,7 +8,6 @@ interface PoiLayerProps {
   poiType: string;
 }
 
-// POI tiplerini Türkçe etiketlere map et
 const POI_LABELS: Record<string, string> = {
   bike_parking: "Bisiklet Parkı",
   bus_stop: "Otobüs Durağı",
@@ -23,19 +22,18 @@ const POI_LABELS: Record<string, string> = {
   tram_station: "Tramvay İstasyonu",
 };
 
-// POI tipine göre renk paleti
 const POI_COLORS: Record<string, string> = {
-  bike_parking: "#facc15", // sarı
-  bus_stop: "#1d4ed8", // mavi
-  ev_charger: "#22c55e", // yeşil
-  health: "#ef4444", // kırmızı
-  kiosk: "#94a3b8", // gri
-  metro_station: "#16a34a", // koyu yeşil
-  micro_mobility_parking: "#fb923c", // turuncu
-  museum: "#0ea5e9", // açık mavi
-  theater: "#ec4899", // pembe
-  toilet: "#a855f7", // mor
-  tram_station: "#14b8a6", // teal
+  bike_parking: "#facc15",
+  bus_stop: "#1d4ed8",
+  ev_charger: "#22c55e",
+  health: "#ef4444",
+  kiosk: "#94a3b8",
+  metro_station: "#16a34a",
+  micro_mobility_parking: "#fb923c",
+  museum: "#0ea5e9",
+  theater: "#ec4899",
+  toilet: "#a855f7",
+  tram_station: "#14b8a6",
 };
 
 export default function PoiLayer({ poiType }: PoiLayerProps) {
@@ -44,7 +42,6 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
   const [poiData, setPoiData] = useState<any>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // 1. API’den veri çek
   useEffect(() => {
     if (!poiType) return;
     fetch(`${API_URL}/poi?poi_type=${poiType}`)
@@ -104,7 +101,7 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
         },
     });
 
-    // Tekil POI noktaları (type bazlı renk)
+    // Tekil POI noktaları
     map.addLayer({
       id: unclusteredId,
       type: "circle",
