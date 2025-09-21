@@ -2,6 +2,8 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from psycopg2 import OperationalError
+from psycopg2.extras import RealDictCursor
+from .utils import success_response, POI_LABELS
 from .db import get_connection
 from .es import get_es_client
 from .utils import success_response, error_response, parse_bbox
@@ -210,16 +212,11 @@ def get_pois(poi_type: str, bbox: str | None = None):
 @app.get("/poi/nearby")
 def get_pois_nearby(lon: float, lat: float, r: int = 500, poi_type: str | None = None):
     conn = get_connection()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
 
     cur.execute("""
         SELECT 
-            poi_id,
-            name,
-            poi_type,
-            subtype,
-            district_name,
-            address_text,
+            poi_id, name, poi_type, subtype, district_name, address_text,
             ST_AsGeoJSON(geom) AS geometry,
             ROUND(
                 ST_Distance(
@@ -242,29 +239,26 @@ def get_pois_nearby(lon: float, lat: float, r: int = 500, poi_type: str | None =
     cur.close()
     conn.close()
 
-    features = []
-    for row in rows:
-        features.append({
+    features = [
+        {
             "type": "Feature",
-            "geometry": json.loads(row["geometry"]),
+            "geometry": json.loads(r["geometry"]),
             "properties": {
-                "poi_id": row["poi_id"],
-                "name": row["name"],
-                "poi_type": row["poi_type"],
-                "subtype": row["subtype"],
-                "district_name": row["district_name"],
-                "address": row["address_text"],
-                "distance_m": row["distance_m"]
-            }
-        })
-
-    if not features:
-        return error_response(
-            message=f"No POIs found within {r}m radius of ({lon}, {lat})",
-            code=404
-        )
+                "poi_id": r["poi_id"],
+                "name": r["name"],
+                "poi_type": r["poi_type"],
+                "poi_type_label": POI_LABELS.get(r["poi_type"], r["poi_type"]),  # ✅ Türkçe label
+                "subtype": r["subtype"],
+                "district_name": r["district_name"],
+                "address_text": r["address_text"],
+                "distance_m": r["distance_m"],
+            },
+        }
+        for r in rows
+    ]
 
     return success_response({"type": "FeatureCollection", "features": features})
+
 
 @app.get("/search")
 def search(q: str, size: int = 10, poi_type: str | None = None):

@@ -13,10 +13,11 @@ interface SelectedPoiLayerProps {
     type: string;
     name?: string;
     district_name?: string;
-    address_text?: string;
+    address_text?: string | null;
     poi_type_label?: string;
-    subtype?: string;
+    subtype?: string | null;
   } | null;
+  onClear?: () => void; // ✅ yeni prop
 }
 
 const POI_COLORS: Record<string, string> = {
@@ -35,7 +36,7 @@ const POI_COLORS: Record<string, string> = {
 
 let currentPopup: maplibregl.Popup | null = null;
 
-export default function SelectedPoiLayer({ poi }: SelectedPoiLayerProps) {
+export default function SelectedPoiLayer({ poi, onClear }: SelectedPoiLayerProps) {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
 
@@ -57,63 +58,60 @@ export default function SelectedPoiLayer({ poi }: SelectedPoiLayerProps) {
 
     if (!poi) return;
 
-    if (poi) {
-      const geojson: FeatureCollection<Point> = {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            geometry: { type: "Point", coordinates: [poi.lon, poi.lat] },
-            properties: { id: poi.id, type: poi.type },
-          },
-        ],
-      };
-
-      map.addSource(sourceId, { type: "geojson", data: geojson });
-      map.addLayer({
-        id: layerId,
-        type: "circle",
-        source: sourceId,
-        paint: {
-          "circle-color": POI_COLORS[poi.type] || "#000",
-          "circle-radius": 16,
-          "circle-stroke-width": 4,
-          "circle-stroke-color": "#ffffff",
+    const geojson: FeatureCollection<Point> = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [poi.lon, poi.lat] },
+          properties: { id: poi.id, type: poi.type },
         },
-      });
+      ],
+    };
 
-      const subtypeText =
-        poi.type === "bus_stop" && poi.subtype
-          ? `Gidiş yönü: ${poi.subtype}`
-          : poi.subtype || "";
+    map.addSource(sourceId, { type: "geojson", data: geojson });
+    map.addLayer({
+      id: layerId,
+      type: "circle",
+      source: sourceId,
+      paint: {
+        "circle-color": POI_COLORS[poi.type] || "#000",
+        "circle-radius": 16,
+        "circle-stroke-width": 4,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
 
-      // yeni popup
-      currentPopup = new maplibregl.Popup({ closeButton: true, offset: 15 })
-        .setLngLat([poi.lon, poi.lat])
-        .setHTML(`
-          <div>
-            <h3 class="poi-title">${poi.name || "Unnamed"}</h3>
-            <p class="poi-district">${poi.district_name || ""}</p>
-            <div class="poi-badges">
-              <span class="poi-badge">${poi.poi_type_label || poi.type}</span>
-              ${subtypeText ? `<span class="poi-subtype">${subtypeText}</span>` : ""}
-            </div>
-            ${
-              poi.address_text
-                ? `<p class="poi-address">${poi.address_text}</p>`
-                : ""
-            }
-            <a 
-              href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lon}" 
-              target="_blank" 
-              class="poi-directions"
-            >
-              Git
-            </a>
+    const subtypeText =
+      poi.type === "bus_stop" && poi.subtype
+        ? `Gidiş yönü: ${poi.subtype}`
+        : poi.subtype || "";
+
+    // yeni popup
+    currentPopup = new maplibregl.Popup({ closeButton: true, offset: 15 })
+      .setLngLat([poi.lon, poi.lat])
+      .setHTML(`
+        <div>
+          <h3 class="poi-title">${poi.name || "Unnamed"}</h3>
+          <p class="poi-district">${poi.district_name || ""}</p>
+          <div class="poi-badges">
+            <span class="poi-badge">${poi.poi_type_label}</span>
+            ${subtypeText ? `<span class="poi-subtype">${subtypeText}</span>` : ""}
           </div>
-        `)
-        .addTo(map);
-    }
+          ${poi.address_text ? `<p class="poi-address">${poi.address_text}</p>` : ""}
+          <a 
+            href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lon}" 
+            target="_blank" 
+            class="poi-directions"
+          >
+            Git
+          </a>
+        </div>
+      `)
+      .addTo(map);
+
+    currentPopup.on("close", () => onClear?.());
+
 
     return () => {
       if (map.getLayer(layerId)) map.removeLayer(layerId);
@@ -124,7 +122,7 @@ export default function SelectedPoiLayer({ poi }: SelectedPoiLayerProps) {
         currentPopup = null;
       }
     };
-  }, [map, poi]);
+  }, [map, poi, onClear]);
 
   return null;
 }

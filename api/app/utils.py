@@ -27,3 +27,17 @@ def parse_bbox(bbox: str):
     if not (minx < maxx and miny < maxy):
         raise HTTPException(status_code=400, detail="bbox must satisfy minx<maxx and miny<maxy")
     return minx, miny, maxx, maxy
+
+POI_LABELS = {
+    "bus_stop": "Otobüs",
+    "metro_station": "Metro",
+    "tram_station": "Tramvay",
+    "ev_charger": "Elektrikli Araç Şarj",
+    "toilet": "Tuvalet",
+    "bike_parking": "Bisiklet Parkı",
+    "micro_mobility_parking": "Mikro Mobilite Parkı",
+    "museum": "Müze",
+    "theater": "Tiyatro",
+    "kiosk": "İHE Büfe",
+    "health": "Sağlık Tesisi",
+}

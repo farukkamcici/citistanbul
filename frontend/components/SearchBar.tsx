@@ -11,8 +11,8 @@ interface SearchResult {
   name?: string;
   poi_type?: string;
   poi_type_label?: string;
-  subtype?: string;
-  address_text?: string;
+  subtype?: string | null;
+  address_text?: string | null;
   lon?: number;
   lat?: number;
   bbox?: [number, number, number, number];
@@ -25,9 +25,9 @@ export interface SelectedPoi {
   type: string;
   name?: string;
   district_name?: string;
-  address_text?: string;
+  address_text?: string | null;
   poi_type_label?: string;
-  subtype?: string;
+  subtype?: string | null;
 }
 
 export default function SearchBar({
@@ -40,6 +40,7 @@ export default function SearchBar({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState<number>(-1);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,6 +53,7 @@ export default function SearchBar({
         !containerRef.current.contains(e.target as Node)
       ) {
         setResults([]);
+        setHighlightIndex(-1);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -85,6 +87,7 @@ export default function SearchBar({
   const handleCancel = () => {
     setQuery("");
     setResults([]);
+    setHighlightIndex(-1);
     onSelectPoi?.(null);
   };
 
@@ -94,6 +97,61 @@ export default function SearchBar({
     if (a.type !== "district" && b.type === "district") return 1;
     return 0;
   });
+
+  // ✅ bir sonucu çalıştır
+  const handleSelect = (r: SearchResult) => {
+    if (!map) return;
+    if (r.type === "district" && r.bbox) {
+      map.fitBounds(
+        [
+          [r.bbox[0], r.bbox[1]],
+          [r.bbox[2], r.bbox[3]],
+        ],
+        { padding: 40, duration: 1000 }
+      );
+    } else if (r.type === "poi" && r.lon && r.lat && r.poi_id) {
+      map.flyTo({
+        center: [r.lon, r.lat],
+        zoom: 16,
+        speed: 1.2,
+      });
+      onSelectPoi?.({
+        id: r.poi_id,
+        lon: r.lon,
+        lat: r.lat,
+        type: r.poi_type || "",
+        name: r.name,
+        district_name: r.district_name,
+        address_text: r.address_text,
+        poi_type_label: r.poi_type_label,
+        subtype: r.subtype,
+      });
+    }
+    setResults([]);
+    setHighlightIndex(-1);
+  };
+
+  // ✅ klavye olayları
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!sortedResults.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((prev) =>
+        prev < sortedResults.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((prev) =>
+        prev > 0 ? prev - 1 : sortedResults.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightIndex >= 0 && highlightIndex < sortedResults.length) {
+        handleSelect(sortedResults[highlightIndex]);
+      }
+    }
+  };
 
   return (
     <div
@@ -107,7 +165,11 @@ export default function SearchBar({
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setHighlightIndex(-1);
+          }}
+          onKeyDown={handleKeyDown}
           placeholder="İlçe veya mekan ara..."
           className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800"
         />
@@ -130,37 +192,10 @@ export default function SearchBar({
             sortedResults.map((r, i) => (
               <div
                 key={i}
-                className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer flex flex-col border-b border-gray-50"
-                onClick={() => {
-                  if (!map) return;
-                  if (r.type === "district" && r.bbox) {
-                    map.fitBounds(
-                      [
-                        [r.bbox[0], r.bbox[1]],
-                        [r.bbox[2], r.bbox[3]],
-                      ],
-                      { padding: 40, duration: 1000 }
-                    );
-                  } else if (r.type === "poi" && r.lon && r.lat && r.poi_id) {
-                    map.flyTo({
-                      center: [r.lon, r.lat],
-                      zoom: 16,
-                      speed: 1.2,
-                    });
-                    onSelectPoi?.({
-                      id: r.poi_id,
-                      lon: r.lon,
-                      lat: r.lat,
-                      type: r.poi_type || "",
-                      name: r.name,
-                      district_name: r.district_name,
-                      address_text: r.address_text,
-                      poi_type_label: r.poi_type_label,
-                      subtype: r.subtype,
-                    });
-                  }
-                  setResults([]); // seçimden sonra liste kapanır
-                }}
+                className={`px-4 py-2 text-sm cursor-pointer flex flex-col border-b border-gray-50 ${
+                  i === highlightIndex ? "bg-gray-100" : "hover:bg-gray-50"
+                }`}
+                onClick={() => handleSelect(r)}
               >
                 {r.type === "district" ? (
                   <span className="font-semibold text-blue-600">

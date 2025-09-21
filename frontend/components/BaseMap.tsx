@@ -8,6 +8,7 @@ import PoiLayer from "@/components/PoiLayer";
 import UserLocationLayer from "@/components/UserLocationLayer";
 import SearchBar, { SelectedPoi } from "@/components/SearchBar";
 import SelectedPoiLayer from "@/components/SelectedPoiLayer";
+import NearbyPanel from "@/components/NearbyPanel";
 import { useState, useEffect } from "react";
 
 const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
@@ -32,26 +33,13 @@ const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
   ],
 };
 
-const POI_COLORS: Record<string, string> = {
-  bike_parking: "#facc15",
-  bus_stop: "#1d4ed8",
-  ev_charger: "#22c55e",
-  health: "#ef4444",
-  kiosk: "#94a3b8",
-  metro_station: "#16a34a",
-  micro_mobility_parking: "#fb923c",
-  museum: "#0ea5e9",
-  theater: "#ec4899",
-  toilet: "#a855f7",
-  tram_station: "#14b8a6",
-};
-
 export default function BaseMap() {
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
   const [open, setOpen] = useState(true);
   const [mapRef, setMapRef] = useState<MapRef | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<SelectedPoi | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lon: number; lat: number } | null>(null);
 
   // Storage’dan yükle
   useEffect(() => {
@@ -105,34 +93,29 @@ export default function BaseMap() {
 
         {/* POI Katmanları */}
         {activeTypes.map((type) => (
-          <PoiLayer
-            key={type}
-            poiType={type}
-            selectedPoiId={selectedPoiId}
-          />
+          <PoiLayer key={type} poiType={type} selectedPoiId={selectedPoiId} />
         ))}
 
         {/* Kullanıcı konumu */}
-        <UserLocationLayer />
+        <UserLocationLayer onLocationUpdate={(coords) => setUserLocation(coords)} />
 
         {/* Seçili POI bağımsız marker */}
         {selectedPoi && <SelectedPoiLayer poi={selectedPoi} />}
       </Map>
 
       {/* Arama barı */}
-        <SearchBar
-          map={mapRef?.getMap() || null}
-          onSelectPoi={(poi) => {
-            if (poi) {
-              setSelectedPoiId(poi.id);
-              setSelectedPoi(poi);
-            } else {
-              // cancel tuşuna basıldı → resetle
-              setSelectedPoiId(null);
-              setSelectedPoi(null);
-            }
-          }}
-        />
+      <SearchBar
+        map={mapRef?.getMap() || null}
+        onSelectPoi={(poi) => {
+          if (poi) {
+            setSelectedPoiId(poi.id);
+            setSelectedPoi(poi);
+          } else {
+            setSelectedPoiId(null);
+            setSelectedPoi(null);
+          }
+        }}
+      />
 
       {/* Katman seçici panel */}
       <div className="absolute top-4 left-4 z-20">
@@ -179,31 +162,24 @@ export default function BaseMap() {
         )}
       </div>
 
-      {/* POI Legend */}
-      {activeTypes.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-white/90 rounded-lg shadow-lg p-3 z-20">
-          <p className="text-xs font-semibold mb-2 text-gray-800">
-            Gösterilen Katmanlar
-          </p>
-          <div className="flex flex-col gap-2">
-            {activeTypes.map((type) => (
-              <div key={type} className="flex items-center gap-2 text-sm">
-                <span
-                  className="w-4 h-4 rounded-full border border-gray-300"
-                  style={{ backgroundColor: POI_COLORS[type] || "#888" }}
-                />
-                <span className="text-gray-900 font-medium">
-                  {
-                    Object.values(POI_CATEGORIES)
-                      .flat()
-                      .find((p) => p.key === type)?.label
-                  }
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Nearby panel */}
+    <NearbyPanel
+      userLocation={userLocation}
+      radius={500}
+      onSelectPoi={(poi) => {
+        setSelectedPoiId(poi.id);
+        setSelectedPoi(poi);
+
+        const map = mapRef?.getMap();
+        if (map) {
+          map.flyTo({
+            center: [poi.lon, poi.lat],
+            zoom: 16,
+            speed: 1.2,
+          });
+        }
+      }}
+    />
     </div>
   );
 }
