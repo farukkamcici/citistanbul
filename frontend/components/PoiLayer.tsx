@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useMap } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
 
 interface PoiLayerProps {
   poiType: string;
+  selectedPoiId?: string | null;
 }
 
 const POI_LABELS: Record<string, string> = {
@@ -36,14 +37,14 @@ const POI_COLORS: Record<string, string> = {
   tram_station: "#14b8a6",
 };
 
-export default function PoiLayer({ poiType }: PoiLayerProps) {
+export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
   const [poiData, setPoiData] = useState<any>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // fetch bbox’lu data
-  const fetchPoiData = () => {
+  // ✅ bbox'a göre POI fetch et (sabit referanslı)
+  const fetchPoiData = useCallback(() => {
     if (!map || !poiType) return;
 
     const bounds = map.getBounds();
@@ -58,83 +59,109 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
       .then((res) => res.json())
       .then((json) => setPoiData(json.data))
       .catch((e) => console.error("POI fetch error:", e));
-  };
+  }, [map, poiType, API_URL]);
 
-  // map hazır olduğunda ve hareket bittiğinde fetch et
+  // ✅ map hazır olduğunda + moveend → fetch
   useEffect(() => {
     if (!map) return;
-
     fetchPoiData();
-    map.on("moveend", fetchPoiData);
+
+    const handleMoveEnd = () => fetchPoiData();
+    map.on("moveend", handleMoveEnd);
 
     return () => {
-      map.off("moveend", fetchPoiData);
+      map.off("moveend", handleMoveEnd);
     };
-  }, [map, poiType]);
+  }, [map, fetchPoiData]);
 
-  // Source + layer ekle
+  // ✅ Source + Layers ekle
   useEffect(() => {
     if (!map || !poiData) return;
 
     const sourceId = `pois-${poiType}`;
     const unclusteredId = `${sourceId}-unclustered`;
+    const highlightId = `${sourceId}-highlight`;
 
+    // Source güncelle veya ekle
     if (map.getSource(sourceId)) {
       (map.getSource(sourceId) as any).setData(poiData);
-      return;
+    } else {
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: poiData,
+        cluster: true,
+        clusterMaxZoom: 12,
+        clusterRadius: 50,
+      });
+
+      map.addLayer({
+        id: `${sourceId}-clusters`,
+        type: "circle",
+        source: sourceId,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": "#11b4da",
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["get", "point_count"],
+            1, 12,
+            100, 28,
+          ],
+          "circle-opacity": 0.6,
+        },
+      });
+
+      map.addLayer({
+        id: `${sourceId}-cluster-count`,
+        type: "symbol",
+        source: sourceId,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": "{point_count_abbreviated}",
+          "text-font": ["Open Sans Bold"],
+          "text-size": 12,
+        },
+      });
+
+      map.addLayer({
+        id: unclusteredId,
+        type: "circle",
+        source: sourceId,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": POI_COLORS[poiType] || "#888",
+          "circle-radius": 9,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#fff",
+        },
+      });
     }
 
-    map.addSource(sourceId, {
-      type: "geojson",
-      data: poiData,
-      cluster: true,
-      clusterMaxZoom: 12,
-      clusterRadius: 50,
-    });
-
-    map.addLayer({
-      id: `${sourceId}-clusters`,
-      type: "circle",
-      source: sourceId,
-      filter: ["has", "point_count"],
-      paint: {
-        "circle-color": "#11b4da",
-        "circle-radius": [
-          "interpolate",
-          ["linear"],
-          ["get", "point_count"],
-          1, 12,
-          100, 28,
+    // ✅ Highlight layer (seçili POI varsa)
+    if (selectedPoiId) {
+      if (map.getLayer(highlightId)) map.removeLayer(highlightId);
+      map.addLayer({
+        id: highlightId,
+        type: "circle",
+        source: sourceId,
+        filter: [
+          "all",
+          ["!", ["has", "point_count"]],
+          ["==", ["get", "poi_id"], selectedPoiId],
         ],
-        "circle-opacity": 0.6,
-      },
-    });
+        paint: {
+          "circle-color": POI_COLORS[poiType] || "#000",
+          "circle-radius": 14,
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#FFD700",
+        },
+      });
+    } else {
+      if (map.getLayer(highlightId)) map.removeLayer(highlightId);
+    }
 
-    map.addLayer({
-      id: `${sourceId}-cluster-count`,
-      type: "symbol",
-      source: sourceId,
-      filter: ["has", "point_count"],
-      layout: {
-        "text-field": "{point_count_abbreviated}",
-        "text-font": ["Open Sans Bold"],
-        "text-size": 12,
-      },
-    });
-
-    map.addLayer({
-      id: unclusteredId,
-      type: "circle",
-      source: sourceId,
-      filter: ["!", ["has", "point_count"]],
-      paint: {
-        "circle-color": POI_COLORS[poiType] || "#888",
-        "circle-radius": 9,
-        "circle-stroke-width": 2,
-        "circle-stroke-color": "#fff",
-      },
-    });
-
+    // ✅ Popup click event
     const onClick = (e: maplibregl.MapMouseEvent) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: [unclusteredId],
@@ -151,7 +178,7 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
           ? `Gidiş yönü: ${props.subtype}`
           : props.subtype || "";
 
-      new maplibregl.Popup({ closeButton: false })
+      new maplibregl.Popup({ closeButton: true, offset: 15 })
         .setLngLat(coords)
         .setHTML(`
           <div>
@@ -176,14 +203,16 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
 
     map.on("click", onClick);
 
+    // Cleanup
     return () => {
       map.off("click", onClick);
+      if (map.getLayer(highlightId)) map.removeLayer(highlightId);
       if (map.getLayer(`${sourceId}-clusters`)) map.removeLayer(`${sourceId}-clusters`);
       if (map.getLayer(`${sourceId}-cluster-count`)) map.removeLayer(`${sourceId}-cluster-count`);
       if (map.getLayer(unclusteredId)) map.removeLayer(unclusteredId);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     };
-  }, [map, poiData, poiType]);
+  }, [map, poiData, poiType, selectedPoiId]);
 
   return null;
 }

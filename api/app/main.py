@@ -270,6 +270,7 @@ def get_pois_nearby(lon: float, lat: float, r: int = 500, poi_type: str | None =
 def search(q: str, size: int = 10, poi_type: str | None = None):
     es = get_es_client()
 
+    # District araması
     district_body = {
         "query": {
             "match": {
@@ -284,6 +285,7 @@ def search(q: str, size: int = 10, poi_type: str | None = None):
     district_res = es.search(index="districts", body=district_body)
     district_hits = district_res["hits"]["hits"]
 
+    # POI araması
     poi_query = {
         "bool": {
             "must": [
@@ -319,6 +321,7 @@ def search(q: str, size: int = 10, poi_type: str | None = None):
             "type": "district",
             "district_id": source["district_id"],
             "district_name": source["district_name"],
+            "bbox": source.get("bbox"),          # <-- eklendi
             "score": h["_score"]
         })
 
@@ -330,12 +333,16 @@ def search(q: str, size: int = 10, poi_type: str | None = None):
             "poi_id": source["poi_id"],
             "name": source["name"],
             "poi_type": source["poi_type"],
+            "poi_type_label": source.get("poi_type_label"),
             "subtype": source.get("subtype"),
             "district_name": source["district_name"],
             "address_text": source.get("address_text"),
+            "lon": source.get("lon"),            # <-- eklendi
+            "lat": source.get("lat"),            # <-- eklendi
             "score": h["_score"]
         })
 
+    # Skorla sırala
     results = sorted(results, key=lambda x: x["score"], reverse=True)
 
     return success_response({"results": results})

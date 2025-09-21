@@ -2,9 +2,12 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import Map from "react-map-gl/maplibre";
+import type { MapRef } from "react-map-gl/maplibre";
 import DistrictLayer from "@/components/DistrictLayer";
 import PoiLayer from "@/components/PoiLayer";
 import UserLocationLayer from "@/components/UserLocationLayer";
+import SearchBar, { SelectedPoi } from "@/components/SearchBar";
+import SelectedPoiLayer from "@/components/SelectedPoiLayer";
 import { useState, useEffect } from "react";
 
 const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
@@ -46,18 +49,17 @@ const POI_COLORS: Record<string, string> = {
 export default function BaseMap() {
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
   const [open, setOpen] = useState(true);
+  const [mapRef, setMapRef] = useState<MapRef | null>(null);
+  const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<SelectedPoi | null>(null);
 
   // Storage’dan yükle
   useEffect(() => {
     const storedTypes = localStorage.getItem("activeTypes");
     const storedOpen = localStorage.getItem("panelOpen");
 
-    if (storedTypes) {
-      setActiveTypes(JSON.parse(storedTypes));
-    }
-    if (storedOpen) {
-      setOpen(JSON.parse(storedOpen));
-    }
+    if (storedTypes) setActiveTypes(JSON.parse(storedTypes));
+    if (storedOpen) setOpen(JSON.parse(storedOpen));
   }, []);
 
   // storage’a kaydet
@@ -89,6 +91,7 @@ export default function BaseMap() {
   return (
     <div className="relative w-screen h-screen">
       <Map
+        ref={setMapRef}
         mapLib={import("maplibre-gl")}
         initialViewState={{
           longitude: 28.9744,
@@ -99,11 +102,37 @@ export default function BaseMap() {
         mapStyle={`https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
       >
         <DistrictLayer />
+
+        {/* POI Katmanları */}
         {activeTypes.map((type) => (
-          <PoiLayer key={type} poiType={type} />
+          <PoiLayer
+            key={type}
+            poiType={type}
+            selectedPoiId={selectedPoiId}
+          />
         ))}
-        <UserLocationLayer/>
+
+        {/* Kullanıcı konumu */}
+        <UserLocationLayer />
+
+        {/* Seçili POI bağımsız marker */}
+        {selectedPoi && <SelectedPoiLayer poi={selectedPoi} />}
       </Map>
+
+      {/* Arama barı */}
+        <SearchBar
+          map={mapRef?.getMap() || null}
+          onSelectPoi={(poi) => {
+            if (poi) {
+              setSelectedPoiId(poi.id);
+              setSelectedPoi(poi);
+            } else {
+              // cancel tuşuna basıldı → resetle
+              setSelectedPoiId(null);
+              setSelectedPoi(null);
+            }
+          }}
+        />
 
       {/* Katman seçici panel */}
       <div className="absolute top-4 left-4 z-20">

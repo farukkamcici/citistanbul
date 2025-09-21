@@ -65,19 +65,16 @@ export default function UserLocationLayer() {
   wrapper.appendChild(halo);
   wrapper.appendChild(dot);
 
-  // marker oluştur
   const marker = new maplibregl.Marker({ element: wrapper })
     .setLngLat(userLocation)
     .addTo(map);
 
-  // cleanup sadece marker.remove yapar
   return () => {
     marker.remove();
   };
 }, [map, userLocation]);
 
 
-  // "Konumuma Git" butonu
   const handleGoToLocation = () => {
     if (!navigator.geolocation) {
       alert("Tarayıcınız konum desteği vermiyor.");
