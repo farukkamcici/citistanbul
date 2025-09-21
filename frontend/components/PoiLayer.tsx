@@ -42,14 +42,37 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
   const [poiData, setPoiData] = useState<any>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  useEffect(() => {
-    if (!poiType) return;
-    fetch(`${API_URL}/poi?poi_type=${poiType}`)
-      .then((res) => res.json())
-      .then((json) => setPoiData(json.data));
-  }, [poiType]);
+  // fetch bbox’lu data
+  const fetchPoiData = () => {
+    if (!map || !poiType) return;
 
-  // 2. Source + layer ekle
+    const bounds = map.getBounds();
+    const bbox = [
+      bounds.getWest(),
+      bounds.getSouth(),
+      bounds.getEast(),
+      bounds.getNorth(),
+    ].join(",");
+
+    fetch(`${API_URL}/poi?poi_type=${poiType}&bbox=${bbox}`)
+      .then((res) => res.json())
+      .then((json) => setPoiData(json.data))
+      .catch((e) => console.error("POI fetch error:", e));
+  };
+
+  // map hazır olduğunda ve hareket bittiğinde fetch et
+  useEffect(() => {
+    if (!map) return;
+
+    fetchPoiData();
+    map.on("moveend", fetchPoiData);
+
+    return () => {
+      map.off("moveend", fetchPoiData);
+    };
+  }, [map, poiType]);
+
+  // Source + layer ekle
   useEffect(() => {
     if (!map || !poiData) return;
 
@@ -69,7 +92,6 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
       clusterRadius: 50,
     });
 
-    // Cluster daireleri
     map.addLayer({
       id: `${sourceId}-clusters`,
       type: "circle",
@@ -88,20 +110,18 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
       },
     });
 
-    // Cluster üzerindeki sayı
     map.addLayer({
-        id: `${sourceId}-cluster-count`,
-        type: "symbol",
-        source: sourceId,
-        filter: ["has", "point_count"],
-        layout: {
+      id: `${sourceId}-cluster-count`,
+      type: "symbol",
+      source: sourceId,
+      filter: ["has", "point_count"],
+      layout: {
         "text-field": "{point_count_abbreviated}",
         "text-font": ["Open Sans Bold"],
         "text-size": 12,
-        },
+      },
     });
 
-    // Tekil POI noktaları
     map.addLayer({
       id: unclusteredId,
       type: "circle",
@@ -115,7 +135,6 @@ export default function PoiLayer({ poiType }: PoiLayerProps) {
       },
     });
 
-    // 3. Popup event
     const onClick = (e: maplibregl.MapMouseEvent) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: [unclusteredId],

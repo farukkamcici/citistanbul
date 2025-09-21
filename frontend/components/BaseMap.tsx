@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import Map from "react-map-gl/maplibre";
 import DistrictLayer from "@/components/DistrictLayer";
 import PoiLayer from "@/components/PoiLayer";
+import UserLocationLayer from "@/components/UserLocationLayer";
 import { useState, useEffect } from "react";
 
 const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
@@ -101,6 +102,7 @@ export default function BaseMap() {
         {activeTypes.map((type) => (
           <PoiLayer key={type} poiType={type} />
         ))}
+        <UserLocationLayer/>
       </Map>
 
       {/* Katman seçici panel */}
