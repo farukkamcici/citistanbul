@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Citistanbul",
+  title: "Istanbul 360",
   description:
-    "Citistanbul — İstanbul’un ulaşım, altyapı, demografi, konut ve kültürel yaşam verilerini harita üzerinde sunan interaktif şehir analitiği platformu.",
+    "Istanbul 360 — İstanbul’un ulaşım, altyapı, demografi, konut ve kültürel yaşam verilerini harita üzerinde sunan interaktif şehir analitiği platformu.",
   icons: {
     icon: "/icon.png",
   },
