@@ -112,18 +112,25 @@ export default function NearbyPanel({
     <Sheet open={open} onOpenChange={setOpen}>
       {/* Trigger butonu */}
       <SheetTrigger asChild>
-        <button
-          className="
-            button-primary
-            fixed bottom-20 left-1/2 -translate-x-1/2 z-30
-            px-3 py-1.5 text-sm
-            sm:left-4 sm:translate-x-0 sm:bottom-4
-            sm:px-4 sm:py-2 sm:text-base
-          "
-        >
-          📍 Yakınımda
-        </button>
-      </SheetTrigger>
+  <button
+    className="
+      fixed bottom-16 left-4 z-30
+      w-14 h-14 bg-white rounded-full shadow-lg border
+      flex items-center justify-center hover:bg-gray-100
+      sm:bottom-4 sm:w-auto sm:h-auto
+      sm:px-4 sm:py-2 sm:text-base sm:rounded-lg sm:gap-2
+    "
+  >
+    <img
+      src="/near.svg"
+      alt="Yakınımda"
+      className="w-7 h-7"
+    />
+    <span className="hidden sm:block text-base font-medium">
+      Yakınımda Ne Var?
+    </span>
+  </button>
+</SheetTrigger>
 
       {/* Panel */}
       <SheetContent
@@ -136,8 +143,13 @@ export default function NearbyPanel({
         {/* Header sabit */}
         <div className="sticky top-0 z-10 bg-white border-b">
           <SheetHeader className="flex flex-row items-center justify-between px-4 py-3">
-            <SheetTitle className="text-gray-900 font-semibold">
-              Yakınımda
+            <SheetTitle className="text-gray-900 font-semibold flex items-center gap-2">
+              <img
+                src="/near.svg"
+                alt="Yakınımda"
+                className="w-5 h-5"
+              />
+              <span className="text-base font-medium text-gray-800 sm:text-white">Yakınımda</span>
             </SheetTitle>
             <button
               onClick={() => setOpen(false)}

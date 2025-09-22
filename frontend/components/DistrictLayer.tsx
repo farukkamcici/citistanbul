@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 import { Source, Layer, useMap } from "react-map-gl/maplibre";
 import type { FeatureCollection } from "geojson";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const METRICS = [
   { key: "population", label: "Nüfus", stops: [100000, 250000, 500000, 1000000], colors: ["#deebf7", "#9ecae1", "#3182bd", "#08519c"] },
@@ -13,10 +25,8 @@ const METRICS = [
   { key: "pedestrian_length_density", label: "Yaya Alanı Yoğunluğu", stops: [0.01, 0.05, 0.1, 0.2], colors: ["#feedde", "#fdbe85", "#fd8d3c", "#e6550d"] }
 ];
 
-// Tooltip (metodoloji açıklaması)
 function InfoHelper() {
   const [open, setOpen] = useState(false);
-
   return (
     <div className="relative inline-block">
       <span
@@ -25,7 +35,6 @@ function InfoHelper() {
       >
         ℹ️
       </span>
-
       {open && (
         <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-56
                         bg-white text-gray-700 text-xs rounded-lg shadow-lg border p-3 z-30">
@@ -47,6 +56,7 @@ export default function DistrictLayer() {
   const [metric, setMetric] = useState<string | null>(null);
   const [districtData, setDistrictData] = useState<any>(null);
   const [loadingDistrict, setLoadingDistrict] = useState(false);
+  const [openCollapsible, setOpenCollapsible] = useState(true);
 
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
@@ -76,96 +86,164 @@ export default function DistrictLayer() {
   }, [API_URL]);
 
   // Map click event
-    useEffect(() => {
-      if (!map) return;
-
-      const handleClick = (e: any) => {
-        const props = e.features?.[0]?.properties;
-        if (!props) {
-          setDistrictData(null);
-          return;
-        }
-
-        setLoadingDistrict(true);
+  useEffect(() => {
+    if (!map) return;
+    const handleClick = (e: any) => {
+      const props = e.features?.[0]?.properties;
+      if (!props) {
         setDistrictData(null);
-
-        fetch(`${API_URL}/metrics?district=${encodeURIComponent(props.district_name)}`)
-          .then(res => res.json())
-          .then(json => setDistrictData(json.data.districts?.[0] || null))
-          .catch(() => setDistrictData(null))
-          .finally(() => setLoadingDistrict(false));
-      };
-
-      // Layer-spesifik event
-      map.on("click", "district-fill", handleClick);
-
-      return () => {
-        if (map.getLayer("district-fill")) {
-          map.off("click", "district-fill", handleClick);
-        }
-      };
-    }, [map, API_URL]);
-
+        return;
+      }
+      setLoadingDistrict(true);
+      setDistrictData(null);
+      fetch(`${API_URL}/metrics?district=${encodeURIComponent(props.district_name)}`)
+        .then(res => res.json())
+        .then(json => setDistrictData(json.data.districts?.[0] || null))
+        .catch(() => setDistrictData(null))
+        .finally(() => setLoadingDistrict(false));
+    };
+    map.on("click", "district-fill", handleClick);
+    return () => {
+      if (map.getLayer("district-fill")) {
+        map.off("click", "district-fill", handleClick);
+      }
+    };
+  }, [map, API_URL]);
 
   if (!geojson) return null;
 
   const mConfig = metric ? METRICS.find((m) => m.key === metric)! : null;
   const choroplethPaint = !mConfig
-    ? { "fill-color": "#bdc7d6",
-        "fill-opacity": 0.4,}
+    ? { "fill-color": "#bdc7d6", "fill-opacity": 0.4 }
     : ({
-        "fill-color": [
-          "interpolate",
-          ["linear"],
-          ["get", metric],
-          ...mConfig.stops.flatMap((v, i) => [v, mConfig.colors[i]])
-        ],
-        "fill-opacity": 0.7,
-      } as any);
+      "fill-color": [
+        "interpolate",
+        ["linear"],
+        ["get", metric],
+        ...mConfig.stops.flatMap((v, i) => [v, mConfig.colors[i]])
+      ],
+      "fill-opacity": 0.7,
+    } as any);
 
   return (
     <>
-      {/* Metric seçimi UI */}
-      <div className="
-        absolute top-2 left-1/2 -translate-x-1/2
-        sm:top-4 sm:right-4 sm:left-auto sm:translate-x-0
-        bg-white/90 border border-gray-300 rounded-lg shadow-md
-        p-2 sm:p-3 space-y-1 sm:space-y-2 z-10 w-64 sm:w-auto">
-        <p className="font-semibold text-sm text-gray-800">Metrik Seç</p>
-        {METRICS.map((m) => (
-          <label key={m.key} className="flex items-center space-x-2 text-sm text-gray-700">
+      {/* === Metric seçimi === */}
+    {/* Mobile: bottom-sheet */}
+    <div className="lg:hidden absolute top-3 right-3 z-20">
+      <Sheet>
+        <SheetTrigger asChild>
+          <button
+            className="
+              bg-white border border-gray-300 rounded-full p-2 shadow-md
+              hover:bg-gray-50 flex items-center justify-center
+            "
+          >
+            <img
+              src="/metrics.svg"
+              alt="Metrik Seç"
+              className="w-5 h-5"
+            />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="max-h-[70vh] flex flex-col">
+          <SheetHeader className="border-b pb-2">
+            <SheetTitle className="font-semibold text-gray-900">
+              İlçe Yoğunluk Haritası
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 px-4 py-2 space-y-3">
+            {METRICS.map((m) => (
+              <label
+                key={m.key}
+                className="flex items-center space-x-2 text-sm p-2 rounded-md hover:bg-gray-50"
+              >
+                <input
+                  type="radio"
+                  name="metric"
+                  value={m.key}
+                  checked={metric === m.key}
+                  onChange={() => setMetric(m.key)}
+                  className="accent-green-600"
+                />
+                <span>{m.label}</span>
+              </label>
+            ))}
+            <label className="flex items-center space-x-2 text-sm p-2 rounded-md hover:bg-gray-50">
+              <input
+                type="radio"
+                name="metric"
+                value=""
+                checked={metric === null}
+                onChange={() => setMetric(null)}
+                className="accent-red-500"
+              />
+              <span>Hiçbiri</span>
+            </label>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+
+
+
+    {/* Desktop: collapsible */}
+    <div className="hidden lg:block absolute top-4 right-4 z-20 w-64">
+      <Collapsible open={openCollapsible} onOpenChange={setOpenCollapsible}>
+        <CollapsibleTrigger asChild>
+          <button
+            className="
+              w-full bg-white border border-gray-300 rounded-lg px-4 py-2 shadow-md
+              flex items-center justify-between hover:bg-gray-50 font-medium text-gray-800
+            "
+          >
+            <div className="flex items-center gap-2">
+              <img
+                src="/metrics.svg"
+                alt="Metrik"
+                className="w-5 h-5"
+              />
+              <span className="text-base font-medium text-gray-800">İlçe Yoğunluk Haritası</span>
+            </div>
+            <span>{openCollapsible ? "▲" : "▼"}</span>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2 bg-white border rounded-lg shadow-md p-3 space-y-2">
+          {METRICS.map((m) => (
+            <label key={m.key} className="flex items-center space-x-2 text-sm">
+              <input
+                type="radio"
+                name="metric"
+                value={m.key}
+                checked={metric === m.key}
+                onChange={() => setMetric(m.key)}
+                className="accent-green-600"
+              />
+              <span>{m.label}</span>
+            </label>
+          ))}
+          <label className="flex items-center space-x-2 text-sm">
             <input
               type="radio"
               name="metric"
-              value={m.key}
-              checked={metric === m.key}
-              onChange={() => setMetric(m.key)}
-              className="accent-green-600"
+              value=""
+              checked={metric === null}
+              onChange={() => setMetric(null)}
+              className="accent-red-500"
             />
-            <span>{m.label}</span>
+            <span>Hiçbiri</span>
           </label>
-        ))}
-        <label className="flex items-center space-x-2 text-sm text-gray-700">
-          <input
-            type="radio"
-            name="metric"
-            value=""
-            checked={metric === null}
-            onChange={() => setMetric(null)}
-            className="accent-red-500"
-          />
-          <span>Hiçbiri</span>
-        </label>
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
 
-      {/* Legend */}
+      {/* === Legend === */}
       {metric && mConfig && (
         <div
           className="
-            absolute bottom-24 left-1/2 -translate-x-1/2
+            absolute bottom-32 left-1/2 -translate-x-1/2
             sm:bottom-4
             bg-white/90 border border-gray-300 rounded-lg shadow-md
-            px-3 sm:px-4 py-2 text-[11px] sm:text-xs text-gray-700 z-10
+            px-3 py-2 text-[11px] sm:text-xs text-gray-700 z-10
           "
         >
           <p className="font-medium text-center mb-1 text-gray-800">
@@ -187,74 +265,65 @@ export default function DistrictLayer() {
         </div>
       )}
 
-      {/* Map layer */}
+      {/* === Map layer === */}
       <Source id="districts" type="geojson" data={geojson}>
         <Layer id="district-fill" type="fill" paint={choroplethPaint} />
         <Layer id="district-outline" type="line" paint={{ "line-color": "#ffffff", "line-width": 2.5 }} />
       </Source>
 
-      {/* District info card */}
-        {loadingDistrict && (
-          <div className="
-            absolute bottom-0 right-0 w-full sm:w-80 sm:bottom-4 sm:right-4
-            bg-white/95 rounded-t-xl sm:rounded-xl shadow-xl border p-5 z-20
-            flex items-center justify-center h-32
-          ">
-            <div className="flex flex-col items-center gap-2 text-gray-500">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm">Yükleniyor...</p>
-            </div>
+      {/* === District info card === */}
+      {loadingDistrict && (
+        <div className="
+          absolute bottom-0 right-0 w-full sm:w-80 sm:bottom-4 sm:right-4
+          bg-white/95 rounded-t-xl sm:rounded-xl shadow-xl border p-5 z-20
+          flex items-center justify-center h-32
+        ">
+          <div className="flex flex-col items-center gap-2 text-gray-500">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm">Yükleniyor...</p>
           </div>
-        )}
-
+        </div>
+      )}
 
       {!loadingDistrict && districtData && (
-          <div
-            className="
-              absolute bottom-0 right-0 w-full max-h-[50%] overflow-y-auto
-              sm:w-80 sm:bottom-4 sm:right-4 sm:max-h-none sm:overflow-visible
-              bg-white/95 rounded-t-xl sm:rounded-xl
-              shadow-xl border p-5 z-20
-            "
-          >
+        <div
+          className="
+            absolute bottom-0 right-0 w-full max-h-[60%] overflow-y-auto
+            sm:w-80 sm:bottom-4 sm:right-4 sm:max-h-none sm:overflow-visible
+            bg-white/95 rounded-t-xl sm:rounded-xl
+            shadow-xl border p-5 z-20
+          "
+        >
           {/* Başlık */}
           <div className="flex items-center justify-between mb-3 border-b pb-2">
-              <h3 className="text-lg font-bold text-gray-900">
-                {districtData.district_name} | 2024 Yılı
-              </h3>
-              <button
-                onClick={() => setDistrictData(null)}
-                className="text-gray-400 hover:text-gray-700 font-bold text-lg cursor-pointer"
-              >
-                ✕
-              </button>
+            <h3 className="text-lg font-bold text-gray-900">
+              {districtData.district_name} | 2024 Yılı
+            </h3>
+            <button
+              onClick={() => setDistrictData(null)}
+              className="text-gray-400 hover:text-gray-700 font-bold text-lg cursor-pointer"
+            >
+              ✕
+            </button>
           </div>
 
           {/* Ana metrikler */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700 mb-3">
             <div>
               <p className="text-gray-500">Nüfus</p>
-              <p className="font-semibold">
-                {districtData.population?.toLocaleString()}
-              </p>
+              <p className="font-semibold">{districtData.population?.toLocaleString()}</p>
             </div>
             <div>
               <p className="text-gray-500">Ortalama Kira</p>
-              <p className="font-semibold">
-                ₺{districtData.avg_rent?.toLocaleString()}
-              </p>
+              <p className="font-semibold">₺{districtData.avg_rent?.toLocaleString()}</p>
             </div>
             <div>
               <p className="text-gray-500">Konut Fiyatı</p>
-              <p className="font-semibold">
-                ₺{districtData.avg_price_m2?.toLocaleString()}/m²
-              </p>
+              <p className="font-semibold">₺{districtData.avg_price_m2?.toLocaleString()}/m²</p>
             </div>
             <div>
               <p className="text-gray-500">Yeşil Alan</p>
-              <p className="font-semibold">
-                {districtData.green_per_capita_m2} m²/kişi
-              </p>
+              <p className="font-semibold">{districtData.green_per_capita_m2} m²/kişi</p>
             </div>
           </div>
 
