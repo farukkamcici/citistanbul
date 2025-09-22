@@ -157,7 +157,7 @@ export default function SearchBar({
     <div
       ref={containerRef}
       className="absolute top-4 left-1/2 -translate-x-1/2
-                 w-[280px] sm:w-[360px]
+                 w-[240px] sm:w-[360px]
                  bg-white/95 backdrop-blur-md
                  shadow-lg rounded-xl border border-gray-200 z-30"
     >

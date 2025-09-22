@@ -274,7 +274,7 @@ export default function DistrictLayer() {
       {/* === District info card === */}
       {loadingDistrict && (
         <div className="
-          absolute bottom-0 right-0 w-full sm:w-80 sm:bottom-4 sm:right-4
+          fixed bottom-0 right-0 w-full sm:w-80 sm:bottom-4 sm:right-4
           bg-white/95 rounded-t-xl sm:rounded-xl shadow-xl border p-5 z-20
           flex items-center justify-center h-32
         ">

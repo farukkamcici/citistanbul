@@ -43,7 +43,6 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
   const [poiData, setPoiData] = useState<any>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // ✅ bbox'a göre POI fetch et (sabit referanslı)
   const fetchPoiData = useCallback(() => {
     if (!map || !poiType) return;
 
@@ -61,7 +60,6 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
       .catch((e) => console.error("POI fetch error:", e));
   }, [map, poiType, API_URL]);
 
-  // ✅ map hazır olduğunda + moveend → fetch
   useEffect(() => {
     if (!map) return;
     fetchPoiData();
@@ -74,7 +72,6 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
     };
   }, [map, fetchPoiData]);
 
-  // ✅ Source + Layers ekle
   useEffect(() => {
     if (!map || !poiData) return;
 
@@ -138,7 +135,6 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
       });
     }
 
-    // ✅ Highlight layer (seçili POI varsa)
     if (selectedPoiId) {
       if (map.getLayer(highlightId)) map.removeLayer(highlightId);
       map.addLayer({
@@ -161,7 +157,6 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
       if (map.getLayer(highlightId)) map.removeLayer(highlightId);
     }
 
-    // ✅ Popup click event
     const onClick = (e: maplibregl.MapMouseEvent) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: [unclusteredId],
@@ -181,21 +176,45 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
       new maplibregl.Popup({ closeButton: true, offset: 15 })
         .setLngLat(coords)
         .setHTML(`
-          <div>
-            <h3 class="poi-title">${props.name || "Unnamed"}</h3>
-            <p class="poi-district">${props.district_name || ""}</p>
-            <div class="poi-badges">
-              <span class="poi-badge">${typeLabel}</span>
-              ${subtypeText ? `<span class="poi-subtype">${subtypeText}</span>` : ""}
+          <div class="bg-white rounded-xl shadow-lg border p-4 w-64 space-y-2">
+            <!-- Başlık -->
+            <h3 class="text-sm font-semibold text-gray-900 truncate">
+              ${props.name || "İsimsiz"}
+            </h3>
+            <p class="text-xs text-gray-500">${props.district_name || ""}</p>
+        
+            <!-- Badge grubu -->
+            <div class="flex flex-wrap gap-1">
+              <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
+                ${typeLabel}
+              </span>
+              ${
+                subtypeText
+                  ? `<span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">${subtypeText}</span>`
+                  : ""
+              }
             </div>
-            ${props.address ? `<p class="poi-address">${props.address}</p>` : ""}
-            <a 
-              href="https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}" 
-              target="_blank" 
-              class="poi-directions"
-            >
-              Git
-            </a>
+        
+            <!-- Adres -->
+            ${
+              props.address
+                ? `<p class="text-xs text-gray-600 line-clamp-2">${props.address}</p>`
+                : ""
+            }
+        
+            <!-- Buton -->
+            <div class="pt-2">
+              <a
+                href="https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}"
+                target="_blank"
+                class="inline-flex items-center justify-center w-full
+                       px-3 py-1.5 text-xs font-medium
+                       bg-blue-600 text-white rounded-lg shadow-sm
+                       hover:bg-blue-700 transition-colors"
+              >
+                Google Maps’te Aç
+              </a>
+            </div>
           </div>
         `)
         .addTo(map);
@@ -203,7 +222,6 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
 
     map.on("click", onClick);
 
-    // Cleanup
     return () => {
       map.off("click", onClick);
       if (map.getLayer(highlightId)) map.removeLayer(highlightId);

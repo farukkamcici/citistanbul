@@ -25,9 +25,9 @@ import {
 
 const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
   "Ulaşım": [
-    { key: "bus_stop", label: "Otobüs" },
-    { key: "metro_station", label: "Metro" },
-    { key: "tram_station", label: "Tramvay" },
+    { key: "bus_stop", label: "Otobüs Durağı" },
+    { key: "metro_station", label: "Metro İstasyonu" },
+    { key: "tram_station", label: "Tramvay İstasyonu" },
   ],
   "Altyapı": [
     { key: "ev_charger", label: "Elektrikli Araç Şarj" },

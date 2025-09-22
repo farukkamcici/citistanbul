@@ -17,7 +17,7 @@ interface SelectedPoiLayerProps {
     poi_type_label?: string;
     subtype?: string | null;
   } | null;
-  onClear?: () => void; // ✅ yeni prop
+  onClear?: () => void;
 }
 
 const POI_COLORS: Record<string, string> = {
@@ -91,23 +91,47 @@ export default function SelectedPoiLayer({ poi, onClear }: SelectedPoiLayerProps
     currentPopup = new maplibregl.Popup({ closeButton: true, offset: 15 })
       .setLngLat([poi.lon, poi.lat])
       .setHTML(`
-        <div>
-          <h3 class="poi-title">${poi.name || "Unnamed"}</h3>
-          <p class="poi-district">${poi.district_name || ""}</p>
-          <div class="poi-badges">
-            <span class="poi-badge">${poi.poi_type_label}</span>
-            ${subtypeText ? `<span class="poi-subtype">${subtypeText}</span>` : ""}
-          </div>
-          ${poi.address_text ? `<p class="poi-address">${poi.address_text}</p>` : ""}
-          <a 
-            href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lon}" 
-            target="_blank" 
-            class="poi-directions"
-          >
-            Git
-          </a>
-        </div>
-      `)
+  <div class="bg-white rounded-xl shadow-lg border p-4 w-64 space-y-2">
+    <!-- Başlık -->
+    <h3 class="text-sm font-semibold text-gray-900 truncate">
+      ${poi.name || "İsimsiz"}
+    </h3>
+    <p class="text-xs text-gray-500">${poi.district_name || ""}</p>
+
+    <!-- Badge grubu -->
+    <div class="flex flex-wrap gap-1">
+      <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
+        ${poi.poi_type_label || poi.type}
+      </span>
+      ${
+        subtypeText
+          ? `<span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">${subtypeText}</span>`
+          : ""
+      }
+    </div>
+
+    <!-- Adres -->
+    ${
+      poi.address_text
+        ? `<p class="text-xs text-gray-600 line-clamp-2">${poi.address_text}</p>`
+        : ""
+    }
+
+    <!-- Buton -->
+    <div class="pt-2">
+      <a
+        href="https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lon}"
+        target="_blank"
+        class="inline-flex items-center justify-center w-full
+               px-3 py-1.5 text-xs font-medium
+               bg-blue-600 text-white rounded-lg shadow-sm
+               hover:bg-blue-700 transition-colors"
+      >
+        Google Maps’te Aç
+      </a>
+    </div>
+  </div>
+`)
       .addTo(map);
 
     currentPopup.on("close", () => onClear?.());

@@ -74,8 +74,11 @@
 
 /* === MapLibre popup === */
 .maplibregl-popup-content {
-  @apply bg-white text-gray-800 rounded-lg border border-gray-300 shadow-lg p-3 text-sm;
   max-width: 240px;
+    padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 .poi-title { @apply font-semibold text-base mb-1; }
 .poi-district { @apply text-gray-500 italic text-xs mb-2; }

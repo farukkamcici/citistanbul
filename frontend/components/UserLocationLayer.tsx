@@ -116,7 +116,7 @@ export default function UserLocationLayer({
   return (
     <button
       onClick={handleGoToLocation}
-      className="absolute bottom-16 right-4 w-14 h-14 bg-white rounded-full shadow-lg border flex items-center justify-center hover:bg-gray-100 z-30"
+      className="fixed bottom-16 right-4 w-14 h-14 bg-white rounded-full shadow-lg border flex items-center justify-center hover:bg-gray-100 z-30"
     >
       <img
         src="navigator.png"

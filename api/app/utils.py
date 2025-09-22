@@ -29,9 +29,9 @@ def parse_bbox(bbox: str):
     return minx, miny, maxx, maxy
 
 POI_LABELS = {
-    "bus_stop": "Otobüs",
-    "metro_station": "Metro",
-    "tram_station": "Tramvay",
+    "bus_stop": "Otobüs Durağı",
+    "metro_station": "Metro İstasyonu",
+    "tram_station": "Tramvay İstasyonu",
     "ev_charger": "Elektrikli Araç Şarj",
     "toilet": "Tuvalet",
     "bike_parking": "Bisiklet Parkı",
