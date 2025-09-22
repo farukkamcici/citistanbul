@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 type NearbyPoi = {
   id: string;
@@ -28,7 +35,34 @@ function formatDistance(m?: number) {
   return `${Math.round(m)} m`;
 }
 
-export default function NearbyPanel({ userLocation, radius = 500, onSelectPoi }: Props) {
+// Kategori tanımı
+const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
+  "Ulaşım": [
+    { key: "bus_stop", label: "Otobüs" },
+    { key: "metro_station", label: "Metro" },
+    { key: "tram_station", label: "Tramvay" },
+  ],
+  "Altyapı": [
+    { key: "ev_charger", label: "Elektrikli Araç Şarj" },
+    { key: "toilet", label: "Tuvalet" },
+    { key: "bike_parking", label: "Bisiklet Parkı" },
+    { key: "micro_mobility_parking", label: "Mikro Mobilite Parkı" },
+  ],
+  "Kültür & Ticaret": [
+    { key: "museum", label: "Müze" },
+    { key: "theater", label: "Tiyatro" },
+    { key: "kiosk", label: "İHE Büfe" },
+  ],
+  "Sağlık": [
+    { key: "health", label: "Sağlık Tesisi" },
+  ],
+};
+
+export default function NearbyPanel({
+  userLocation,
+  radius = 500,
+  onSelectPoi,
+}: Props) {
   const [pois, setPois] = useState<GroupedPois>({});
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,7 +75,9 @@ export default function NearbyPanel({ userLocation, radius = 500, onSelectPoi }:
     let cancelled = false;
     setLoading(true);
 
-    fetch(`${API_URL}/poi/nearby?lon=${userLocation.lon}&lat=${userLocation.lat}&r=${radius}`)
+    fetch(
+      `${API_URL}/poi/nearby?lon=${userLocation.lon}&lat=${userLocation.lat}&r=${radius}`
+    )
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
@@ -54,7 +90,7 @@ export default function NearbyPanel({ userLocation, radius = 500, onSelectPoi }:
             id: f.properties.poi_id,
             name: f.properties.name,
             type: t,
-              poi_type_label:f.properties.poi_type_label,
+            poi_type_label: f.properties.poi_type_label,
             subtype: f.properties.subtype,
             address_text: f.properties.address_text,
             distance_m: f.properties.distance_m,
@@ -73,52 +109,80 @@ export default function NearbyPanel({ userLocation, radius = 500, onSelectPoi }:
   }, [userLocation?.lon, userLocation?.lat, radius, API_URL, open]);
 
   return (
-    <div
-      className="
-        absolute bottom-0 left-0 w-full sm:w-80 sm:bottom-4 sm:left-4
-        bg-white/95 rounded-t-xl sm:rounded-xl shadow-xl border
-        z-20 overflow-y-auto max-h-[45%] sm:max-h-[70%]
-      "
-    >
-      <div
-        className="flex items-center justify-between px-4 py-2 border-b cursor-pointer"
-        onClick={() => setOpen(!open)}
-      >
-        <p className="font-semibold text-gray-900">📍 Yakınımda</p>
-        <span className="text-gray-600">{open ? "▼" : "▲"}</span>
-      </div>
+    <Sheet open={open} onOpenChange={setOpen}>
+      {/* Trigger butonu */}
+      <SheetTrigger asChild>
+        <button
+          className="
+            button-primary
+            fixed bottom-20 left-1/2 -translate-x-1/2 z-30
+            px-3 py-1.5 text-sm
+            sm:left-4 sm:translate-x-0 sm:bottom-4
+            sm:px-4 sm:py-2 sm:text-base
+          "
+        >
+          📍 Yakınımda
+        </button>
+      </SheetTrigger>
 
-      {open && (
-        <div className="p-3 space-y-4 text-sm">
+      {/* Panel */}
+      <SheetContent
+        side="bottom"
+        className="
+          max-h-[70vh] sm:side-left sm:w-80 sm:max-h-screen
+          flex flex-col p-0
+        "
+      >
+        {/* Header sabit */}
+        <div className="sticky top-0 z-10 bg-white border-b">
+          <SheetHeader className="flex flex-row items-center justify-between px-4 py-3">
+            <SheetTitle className="text-gray-900 font-semibold">
+              Yakınımda
+            </SheetTitle>
+            <button
+              onClick={() => setOpen(false)}
+              className="text-gray-500 hover:text-gray-800"
+            >
+              ✕
+            </button>
+          </SheetHeader>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-6">
           {loading && <p className="text-gray-700">Yükleniyor...</p>}
           {!loading && Object.keys(pois).length === 0 && (
             <p className="text-gray-700">Sonuç bulunamadı</p>
           )}
 
-          {Object.entries(pois).map(([type, list]) => {
-            const limited = list.slice(0, 10);
+          {Object.entries(POI_CATEGORIES).map(([category, items]) => {
+            const categoryPois = items.flatMap((poiDef) => pois[poiDef.key] || []);
+            if (categoryPois.length === 0) return null;
+
             return (
-              <div key={type}>
-                <p className="font-semibold text-gray-800 mb-2">
-                  {list[0]?.poi_type_label || ""} ({list.length})
+              <div key={category} className="space-y-2">
+                {/* kategori başlığı */}
+                <p className="font-semibold text-gray-800 border-b pb-1">
+                  {category} ({categoryPois.length})
                 </p>
-                <ul className="space-y-2">
-                  {limited.map((poi) => (
+
+                <ul className="space-y-1">
+                  {categoryPois.slice(0, 10).map((poi) => (
                     <li
                       key={poi.id}
-                      className="p-2 rounded hover:bg-gray-100 cursor-pointer"
+                      className="p-2 rounded-md hover:bg-gray-50 cursor-pointer"
                       onClick={() => onSelectPoi?.(poi)}
                     >
                       <div className="flex justify-between items-center">
                         <span className="font-medium text-gray-900">
                           {poi.name || "(İsimsiz)"}
                         </span>
-                        <span className="text-xs text-gray-700">
+                        <span className="text-xs text-gray-500">
                           {formatDistance(poi.distance_m)}
                         </span>
                       </div>
                       {(poi.subtype || poi.address_text) && (
-                        <p className="text-xs text-gray-700 truncate">
+                        <p className="text-xs text-gray-600 truncate">
                           {poi.subtype || poi.address_text}
                         </p>
                       )}
@@ -129,7 +193,7 @@ export default function NearbyPanel({ userLocation, radius = 500, onSelectPoi }:
             );
           })}
         </div>
-      )}
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
