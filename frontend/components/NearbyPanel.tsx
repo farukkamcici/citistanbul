@@ -149,7 +149,7 @@ export default function NearbyPanel({
                 alt="Yakınımda"
                 className="w-5 h-5"
               />
-              <span className="text-base font-medium text-gray-800 sm:text-white">Yakınımda</span>
+              <span className="text-base font-medium text-gray-800">Yakınımda</span>
             </SheetTitle>
             <button
               onClick={() => setOpen(false)}
