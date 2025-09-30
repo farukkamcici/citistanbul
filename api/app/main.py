@@ -1,22 +1,24 @@
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from psycopg2 import OperationalError
 from psycopg2.extras import RealDictCursor
-from .utils import success_response, POI_LABELS
+import json
 from .db import get_connection
 from .es import get_es_client
-from .utils import success_response, error_response, parse_bbox
-import json
-from fastapi.middleware.cors import CORSMiddleware
+from .utils import success_response, error_response, parse_bbox, POI_LABELS
+from .rag import run_rag_pipeline
 
 app = FastAPI()
 
 
 origins = [
-    "http://localhost:3000",        # local Next.js
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://citistanbul.vercel.app", # Vercel prod
+    "https://citistanbul.vercel.app",
+    "https://istanbul360.vercel.app"
 ]
 
 app.add_middleware(
@@ -395,4 +397,14 @@ def get_green_areas(bbox: str | None = None):
         return error_response(message="No green areas found", code=404)
 
     return success_response({"type": "FeatureCollection", "features": features})
+
+
+class RAGRequest(BaseModel):
+    question: str
+    top_k: int = 7
+
+@app.post("/rag/query")
+def rag_query(req: RAGRequest):
+    return run_rag_pipeline(req.question, req.top_k)
+
 

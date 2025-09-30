@@ -435,7 +435,42 @@ faq AS (
     UNION ALL
     SELECT NULL, NULL, 'faq', 'system',
            'Sistem yalnızca kamuya açık ve ücretsiz veri kaynaklarını kullanmaktadır.' AS text
+    -- 🔹 Yeni eklenenler
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'scope',
+           'Bu veri seti, İstanbul’un 39 ilçesine ait nüfus, hane büyüklüğü, kira, konut fiyatı, yeşil alan, bisiklet yolu, yaya yolu ve hizmet noktaları gibi bilgileri içermektedir.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'system',
+           'Sistem, İstanbul ilçeleri hakkında kapsamlı istatistikler ve mekânsal veriler sunarak şehir planlaması, analiz ve karşılaştırma için kullanılmaktadır.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'system',
+           'Veri seti, İstanbul ilçelerinin demografi, ekonomi, ulaşım ve yaşam kalitesi göstergelerini tek bir platformda birleştirir.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'system',
+           'Amaç, İstanbul ilçelerinin yeşil alan, ulaşım, konut ve hizmet erişimi açısından karşılaştırılmasını kolaylaştırmaktır.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'update',
+           'Bu sistemde kullanılan veriler yıllık olarak güncellenmektedir. Şu anki veriler 2024 yılına aittir.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'reliability',
+           'Veriler İstanbul Büyükşehir Belediyesi ve resmi istatistik kurumlarından alındığı için güvenilirdir.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'audience',
+           'Sistem araştırmacılar, öğrenciler, şehir plancıları ve vatandaşların İstanbul ilçeleri hakkında bilgi edinmesi için tasarlanmıştır.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'limitations',
+           'Veriler ilçe düzeyinde derlenmiştir; mahalle veya daha küçük ölçekli veriler sistemde bulunmamaktadır.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'tech',
+           'Bu sistem, açık veri kaynaklarından toplanan bilgileri DuckDB ve dbt ile dönüştürüp PostGIS’e aktarmakta, FastAPI ile servis etmektedir.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'tech',
+           'Yanıtlar, verilerden üretilen snippet’ler ile desteklenmiş ve Gemini dil modeli tarafından oluşturulmaktadır.' AS text
+    UNION ALL
+    SELECT NULL, NULL, 'faq', 'summary',
+           'Bu sistem, İstanbul ilçelerinin demografi, konut, ulaşım, yeşil alan ve hizmet noktalarına dair verileri birleştirerek karşılaştırmalı analiz yapmaya imkan veren bir şehir analitiği platformudur.' AS text
 )
+
 
 SELECT
     MD5(COALESCE(district_name,'') || doc_type || metric_key || text) AS doc_id,
