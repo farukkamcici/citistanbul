@@ -15,15 +15,19 @@ metadata = pd.read_parquet("data/rag_knowledge_metadata.parquet")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
 
-def diversify_snippets(ranked_snippets, top_k=5, max_per_metric=1):
+def diversify_snippets(ranked_snippets, top_k=15, max_per_metric=2):
     grouped = defaultdict(list)
     for s in ranked_snippets:
         grouped[s["metric_key"]].append(s)
 
-    unique_snippets = [group[0] for group in grouped.values()]
+    unique_snippets = []
+    for group in grouped.values():
+        unique_snippets.extend(group[:max_per_metric])  # her metric'ten en fazla 2 al
+
     return unique_snippets[:top_k]
 
-def run_rag_pipeline(question: str, top_k: int = 7):
+
+def run_rag_pipeline(question: str, top_k: int = 15):
     # 1. Encode query
     q_emb = model.encode([question]).astype("float32")
 
@@ -42,16 +46,16 @@ def run_rag_pipeline(question: str, top_k: int = 7):
     scores = reranker.predict(pairs)
     ranked = sorted(zip(snippets, scores), key=lambda x: x[1], reverse=True)
 
-    #Threshold + diversify
-    threshold = 0.4
+    # Threshold + diversify
+    threshold = 0.3
     filtered = [(s, sc) for s, sc in ranked if sc >= threshold]
 
     if filtered:
-        snippets = diversify_snippets([s for s, _ in filtered], top_k=top_k)
+        snippets = diversify_snippets([s for s, _ in filtered], top_k=top_k, max_per_metric=2)
     else:
-        snippets = diversify_snippets([s for s, _ in ranked], top_k=top_k)
+        snippets = diversify_snippets([s for s, _ in ranked], top_k=top_k, max_per_metric=2)
 
-    #Prompt
+    # Prompt
     context = "\n".join([
         f"- [{s['doc_type']} | {s.get('district_name')} | {s.get('metric_key')}] {s['text']}"
         for s in snippets
@@ -85,3 +89,4 @@ def run_rag_pipeline(question: str, top_k: int = 7):
         answer = f"Modelden cevap alınamadı: {data}"
 
     return {"question": question, "answer": answer, "snippets": snippets}
+

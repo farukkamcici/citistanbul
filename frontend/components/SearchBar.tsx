@@ -283,7 +283,7 @@ export default function SearchBar({
 
       {/* normal search sonuç listesi */}
       {!assistantMode && results.length > 0 && (
-        <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl border border-gray-200 w-full max-w-[75%] sm:max-w-[575px] max-h-60 overflow-y-auto">
+        <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl border border-gray-200 w-full max-w-[75%] sm:max-w-[575px] max-h-60 overflow-y-auto pointer-events-auto">
           {loading && (
             <p className="px-4 py-2 text-sm text-gray-400">Aranıyor...</p>
           )}
@@ -315,7 +315,7 @@ export default function SearchBar({
 
       {/* assistant chat panel */}
       {assistantMode && (
-        <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl border border-gray-200 w-full max-w-[70%] sm:max-w-[575px] max-h-96 overflow-y-auto p-3 space-y-3 text-sm">
+        <div className="bg-white/95 backdrop-blur-md shadow-lg rounded-xl border border-gray-200 w-full max-w-[70%] sm:max-w-[575px] max-h-96 overflow-y-auto p-3 space-y-3 text-sm pointer-events-auto">
           {chat.length === 0 && !loading && (
             <div className="flex items-center justify-center h-full text-gray-700 text-sm italic gap-2">
               <Loader2 size={18} className="animate-spin text-blue-500" />
