@@ -4,37 +4,7 @@ import pandas as pd
 from collections import defaultdict
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import requests
-import os
-
-import os
-from pathlib import Path
-
-
-def get_secret(key_name: str, default: str | None = None) -> str | None:
-    """
-    Unified secret getter.
-    Works with both environment variables (.env) and Docker secrets.
-
-    Example:
-        get_secret("ORS_KEY")
-        get_secret("GEMINI_KEY")
-    """
-    # Try environment variable first
-    val = os.getenv(key_name)
-    if val:
-        return val.strip()
-
-    #Try Docker secret file (mounted at /run/secrets/<lowercase_key>)
-    secret_path = Path(f"/run/secrets/{key_name.lower()}")
-    if secret_path.exists():
-        raw = secret_path.read_text().strip()
-        # handle KEY=value style files too
-        if "=" in raw:
-            _, raw = raw.split("=", 1)
-        return raw.strip()
-
-    return default
-
+from .utils import get_secret
 
 # Modeller ve index global load
 model = SentenceTransformer("intfloat/multilingual-e5-base")

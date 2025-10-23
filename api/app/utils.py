@@ -1,4 +1,6 @@
 from fastapi import HTTPException
+from pathlib import Path
+import os
 
 def success_response(data, message = "ok", code = 200):
     return {
@@ -41,3 +43,30 @@ POI_LABELS = {
     "kiosk": "İHE Büfe",
     "health": "Sağlık Tesisi",
 }
+
+def get_secret(key_name: str, default: str | None = None) -> str | None:
+    """
+    Unified secret getter.
+    Works with both environment variables (.env) and Docker secrets.
+
+    Example:
+        get_secret("ORS_KEY")
+        get_secret("GEMINI_KEY")
+    """
+    # 1️⃣ Try environment variable first
+    val = os.getenv(key_name)
+    if val:
+        return val.strip()
+
+    # 2️⃣ Try Docker secret file (mounted at /run/secrets/<lowercase_key>)
+    secret_path = Path(f"/run/secrets/{key_name.lower()}")
+    if secret_path.exists():
+        raw = secret_path.read_text().strip()
+        # handle KEY=value style files too
+        if "=" in raw:
+            _, raw = raw.split("=", 1)
+        return raw.strip()
+
+    # 3️⃣ Fallback
+    return default
+
