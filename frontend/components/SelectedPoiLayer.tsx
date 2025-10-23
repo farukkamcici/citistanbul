@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Source, Layer } from "react-map-gl/maplibre";
 import type { FeatureCollection, Point } from "geojson";
-import type { CircleLayerSpecification } from "maplibre-gl";
+import type { LayerProps } from "react-map-gl/maplibre";
 import type { SelectedPoi } from "@/components/SearchBar";
 
 interface SelectedPoiLayerProps {
@@ -24,16 +24,16 @@ const POI_COLORS: Record<string, string> = {
   tram_station: "#14b8a6",
 };
 
-const HIGHLIGHT_LAYER: CircleLayerSpecification = {
+const HIGHLIGHT_LAYER = {
   id: "selected-poi-layer",
-  type: "circle",
+  type: "circle" as const,
   paint: {
-    "circle-color": ["coalesce", ["get", "color"], "#000"],
+    "circle-color": ["coalesce", ["get", "color"], "#000"] as any,
     "circle-radius": 16,
     "circle-stroke-width": 4,
     "circle-stroke-color": "#ffffff",
   },
-};
+} satisfies LayerProps;
 
 export default function SelectedPoiLayer({ poi }: SelectedPoiLayerProps) {
   const sourceData = useMemo<FeatureCollection<Point> | null>(() => {
