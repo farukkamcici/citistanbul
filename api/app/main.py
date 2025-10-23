@@ -12,6 +12,37 @@ from .db import get_connection
 from .es import get_es_client
 from .utils import success_response, error_response, parse_bbox, POI_LABELS
 from .rag import run_rag_pipeline
+from pathlib import Path
+import os
+
+
+def get_secret(key_name: str, default: str | None = None) -> str | None:
+    """
+    Unified secret getter.
+    Works with both environment variables (.env) and Docker secrets.
+
+    Example:
+        get_secret("ORS_KEY")
+        get_secret("GEMINI_KEY")
+    """
+    # 1️⃣ Try environment variable first
+    val = os.getenv(key_name)
+    if val:
+        return val.strip()
+
+    # 2️⃣ Try Docker secret file (mounted at /run/secrets/<lowercase_key>)
+    secret_path = Path(f"/run/secrets/{key_name.lower()}")
+    if secret_path.exists():
+        raw = secret_path.read_text().strip()
+        # handle KEY=value style files too
+        if "=" in raw:
+            _, raw = raw.split("=", 1)
+        return raw.strip()
+
+    # 3️⃣ Fallback
+    return default
+
+
 
 app = FastAPI()
 
@@ -466,7 +497,8 @@ def get_green_areas(bbox: str | None = None):
 
 @app.post("/directions")
 def get_directions(payload: DirectionsRequest):
-    ors_key = os.getenv("ORS_API_KEY")
+
+    ors_key = get_secret("ORS_KEY")
     if not ors_key:
         return JSONResponse(
             status_code=500,

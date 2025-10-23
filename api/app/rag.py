@@ -6,13 +6,44 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 import requests
 import os
 
+import os
+from pathlib import Path
+
+
+def get_secret(key_name: str, default: str | None = None) -> str | None:
+    """
+    Unified secret getter.
+    Works with both environment variables (.env) and Docker secrets.
+
+    Example:
+        get_secret("ORS_KEY")
+        get_secret("GEMINI_KEY")
+    """
+    # Try environment variable first
+    val = os.getenv(key_name)
+    if val:
+        return val.strip()
+
+    #Try Docker secret file (mounted at /run/secrets/<lowercase_key>)
+    secret_path = Path(f"/run/secrets/{key_name.lower()}")
+    if secret_path.exists():
+        raw = secret_path.read_text().strip()
+        # handle KEY=value style files too
+        if "=" in raw:
+            _, raw = raw.split("=", 1)
+        return raw.strip()
+
+    return default
+
+
 # Modeller ve index global load
 model = SentenceTransformer("intfloat/multilingual-e5-base")
 reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 index = faiss.read_index("data/rag_knowledge.index")
 metadata = pd.read_parquet("data/rag_knowledge_metadata.parquet")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = get_secret("GEMINI_KEY")
+
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
 
 def diversify_snippets(ranked_snippets, top_k=15, max_per_metric=2):
