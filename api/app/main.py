@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -14,6 +13,8 @@ from .utils import success_response, error_response, parse_bbox, POI_LABELS
 from .rag import run_rag_pipeline
 from pathlib import Path
 import os
+import traceback
+import sys
 
 
 def get_secret(key_name: str, default: str | None = None) -> str | None:
@@ -143,10 +144,15 @@ async def db_exception_handler(request: Request, exc: OperationalError):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
+    tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    print("---- EXCEPTION TRACE ----", file=sys.stderr)
+    print(tb, file=sys.stderr)
+    print("--------------------------", file=sys.stderr)
     return JSONResponse(
         status_code=500,
         content=error_response(message=str(exc), code=500)
     )
+
 
 @app.get("/health")
 def health():
