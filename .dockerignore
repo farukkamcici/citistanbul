@@ -1,0 +1,28 @@
+# Sanal ortamlar
+.venv/
+venv/
+
+# Git ve IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Cache
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.log
+
+# Büyük dosyalar
+*.csv
+*.xlsx
+*.xls
+*.zip
+
+frontend/
+ingest/
+scripts/
+transform/
+warehouse/

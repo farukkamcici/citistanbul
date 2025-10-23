@@ -141,9 +141,15 @@ How to add a new POI type:
 3) Ensure backend supports the new `poi_type` in `GET /poi`.
 
 ### components/SelectedPoiLayer.tsx
-- Renders a single highlighted POI with a prominent circle and popup.
-- Accepts a `poi` object with coordinates and metadata.
-- Cleans up layer, source, and popup on prop change/unmount; calls `onClear` on popup close.
+- Highlights the selected POI on the map with a styled marker; all interaction happens in the directions sidebar.
+
+### components/DirectionsSidebar.tsx
+- Fixed right-hand panel that opens as soon as a POI is selected, showing details, travel-mode toggles, a "Konumum" button, and the route summary/error states.
+- Manages all routing actions (get directions, clear route, open in Google Maps) without covering the map.
+
+### components/RouteLayer.tsx
+- Adds the current OpenRouteService route as a styled line layer.
+- Fits the viewport to the route `bbox` when a new path is drawn.
 
 ### components/UserLocationLayer.tsx
 - Requests geolocation permission and marks the user’s current location.
@@ -189,6 +195,7 @@ How to add a new POI type:
 - `GET /poi?poi_type=&bbox=` — POIs for current viewport and type.
 - `GET /poi/nearby?lon=&lat=&r=` — nearby POIs around user.
 - `GET /green_areas?bbox=` — green areas within viewport.
+- `POST /directions` — routes between user location and POI (profiles: walk, bike, car); responses feed the directions sidebar and route line.
 
 All are requested from `NEXT_PUBLIC_API_URL`.
 

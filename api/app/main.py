@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -6,6 +7,7 @@ from pydantic import BaseModel
 from psycopg2 import OperationalError
 from psycopg2.extras import RealDictCursor
 import json
+import requests
 from .db import get_connection
 from .es import get_es_client
 from .utils import success_response, error_response, parse_bbox, POI_LABELS
@@ -28,6 +30,69 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class Coordinate(BaseModel):
+    lon: float
+    lat: float
+
+
+class DirectionsRequest(BaseModel):
+    start: Coordinate
+    end: Coordinate
+    mode: str
+
+
+PROFILE_MAP = {
+    "walk": "foot-walking",
+    "bike": "cycling-regular",
+    "car": "driving-car",
+}
+
+
+def decode_polyline(polyline: str, precision: int = 5) -> list[list[float]]:
+    coordinates: list[list[float]] = []
+    index = 0
+    lat = 0
+    lon = 0
+    factor = 10 ** precision
+
+    while index < len(polyline):
+        result = 0
+        shift = 0
+
+        while True:
+            if index >= len(polyline):
+                break
+            b = ord(polyline[index]) - 63
+            index += 1
+            result |= (b & 0x1F) << shift
+            shift += 5
+            if b < 0x20:
+                break
+
+        delta_lat = ~(result >> 1) if (result & 1) else (result >> 1)
+        lat += delta_lat
+
+        result = 0
+        shift = 0
+
+        while True:
+            if index >= len(polyline):
+                break
+            b = ord(polyline[index]) - 63
+            index += 1
+            result |= (b & 0x1F) << shift
+            shift += 5
+            if b < 0x20:
+                break
+
+        delta_lon = ~(result >> 1) if (result & 1) else (result >> 1)
+        lon += delta_lon
+
+        coordinates.append([lon / factor, lat / factor])
+
+    return coordinates
 
 # GLOBAL ERROR HANDLERS
 
@@ -399,6 +464,127 @@ def get_green_areas(bbox: str | None = None):
     return success_response({"type": "FeatureCollection", "features": features})
 
 
+@app.post("/directions")
+def get_directions(payload: DirectionsRequest):
+    ors_key = os.getenv("ORS_API_KEY")
+    if not ors_key:
+        return JSONResponse(
+            status_code=500,
+            content=error_response(message="ORS API key not configured", code=500)
+        )
+
+    profile = PROFILE_MAP.get(payload.mode)
+    if not profile:
+        return JSONResponse(
+            status_code=400,
+            content=error_response(message="Invalid travel mode", code=400)
+        )
+
+    coordinates = [
+        [payload.start.lon, payload.start.lat],
+        [payload.end.lon, payload.end.lat],
+    ]
+
+    try:
+        response = requests.post(
+            f"https://api.openrouteservice.org/v2/directions/{profile}",
+            headers={
+                "Authorization": ors_key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "coordinates": coordinates,
+                "format": "geojson",
+                "instructions": False,
+            },
+            timeout=20,
+        )
+    except requests.RequestException:
+        return JSONResponse(
+            status_code=502,
+            content=error_response(message="Routing service unavailable", code=502)
+        )
+
+    if not response.ok:
+        message = "Routing request failed"
+        try:
+            error_body = response.json()
+            message = (
+                error_body.get("error", {}).get("message")
+                or error_body.get("message")
+                or message
+            )
+        except ValueError:
+            if response.text:
+                message = response.text
+
+        return JSONResponse(
+            status_code=response.status_code,
+            content=error_response(message=message, code=response.status_code)
+        )
+
+    try:
+        data = response.json()
+    except ValueError:
+        return JSONResponse(
+            status_code=502,
+            content=error_response(message="Invalid routing response", code=502)
+        )
+
+    if isinstance(data, dict) and "features" in data:
+        return success_response(data)
+
+    routes = data.get("routes") if isinstance(data, dict) else None
+    if not routes:
+        return success_response(data)
+
+    route = routes[0]
+    geometry = route.get("geometry") if isinstance(route, dict) else None
+
+    coordinates: list[list[float]] | None = None
+
+    if isinstance(geometry, dict) and geometry.get("type") == "LineString":
+        coordinates = geometry.get("coordinates")
+    elif isinstance(geometry, (list, tuple)):
+        coordinates = list(geometry)
+    elif isinstance(geometry, str):
+        precision = 5
+        query_meta = data.get("metadata", {}).get("query", {}) if isinstance(data, dict) else {}
+        if isinstance(query_meta, dict):
+            precision = int(query_meta.get("geometry_precision", precision))
+        coordinates = decode_polyline(geometry, precision=precision)
+
+    if not coordinates:
+        return success_response(data)
+
+    feature = {
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": coordinates,
+        },
+        "properties": {
+            "summary": route.get("summary"),
+        },
+    }
+
+    if "bbox" in route:
+        feature["bbox"] = route["bbox"]
+
+    feature_collection = {
+        "type": "FeatureCollection",
+        "features": [feature],
+    }
+
+    bbox = data.get("bbox") if isinstance(data, dict) else None
+    if bbox:
+        feature_collection["bbox"] = bbox
+    elif "bbox" in route:
+        feature_collection["bbox"] = route["bbox"]
+
+    return success_response(feature_collection)
+
+
 class RAGRequest(BaseModel):
     question: str
     top_k: int = 7
@@ -406,5 +592,3 @@ class RAGRequest(BaseModel):
 @app.post("/rag/query")
 def rag_query(req: RAGRequest):
     return run_rag_pipeline(req.question, req.top_k)
-
-

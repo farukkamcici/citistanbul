@@ -1,38 +1,100 @@
 services:
-  db:
-    image: postgis/postgis:16-3.4
-    container_name: citistanbul_postgis
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: citistanbul
-      POSTGRES_PASSWORD: citistanbul
-      POSTGRES_DB: citistanbul
-    volumes:
-      - postgis_data:/var/lib/postgresql/data
-      - ./data/interim:/import
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
-    container_name: citistanbul-es
+  db:
+
+    image: postgis/postgis:16-3.4
+
+    container_name: citistanbul_db
+
+    restart: always
+
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
+
+      POSTGRES_USER: citistanbul
+
+      POSTGRES_PASSWORD: citistanbul
+
+      POSTGRES_DB: citistanbul
+
     volumes:
+
+      - db_data:/var/lib/postgresql/data
+
+    ports:
+      - 5432:5432
+    networks:
+
+      - backend
+
+  es:
+
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+
+    container_name: citistanbul_es
+
+    environment:
+
+      - discovery.type=single-node
+
+      - xpack.security.enabled=false
+
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+
+    volumes:
+
       - es_data:/usr/share/elasticsearch/data
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.15.0
-    container_name: citistanbul-kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+
+      - backend
+
     ports:
-      - "5601:5601"
+
+      - "127.0.0.1:9200:9200"
+  api:
+
+    build: ./api
+
+    container_name: citistanbul_api
+
+    restart: always
+
+    environment:
+
+      DATABASE_URL: postgresql://citistanbul:citistanbul@db:5432/citistanbul
+
+      ELASTIC_URL: http://es:9200
+
+      GEMINI_API_KEY_FILE: /run/secrets/gemini_key
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    secrets:
+      - gemini_key
+    depends_on:
+
+      - db
+
+      - es
+
+    ports:
+
+      - "8000:8000"
+
+    networks:
+
+      - backend
 
 volumes:
-  postgis_data:
+
+  db_data:
+
   es_data:
+
+  hf_cache:
+networks:
+
+  backend:
+
+secrets:
+  gemini_key:
+    file: /etc/citistanbul/secrets/gemini_key.txt

@@ -16,6 +16,7 @@ Environment
 - `POSTGRES_DB`: Database name
 - `POSTGRES_USER`: Database user
 - `POSTGRES_PASSWORD`: Database password
+- `ORS_API_KEY`: OpenRouteService key used to proxy directions requests
 
 Notes
 - Run the server from inside `api/` so `python-dotenv` loads `api/.env`.
@@ -30,6 +31,7 @@ Endpoints
 - `GET /poi/nearby?lon=<lon>&lat=<lat>&r=<meters>[&poi_type=<type>]`: POIs around a point within radius `r` meters.
 - `GET /search?q=<query>[&size=<n>][&poi_type=<type>]`: Full‑text search across districts and POIs (Elasticsearch).
 - `GET /green_areas[?bbox=minx,miny,maxx,maxy]`: GeoJSON FeatureCollection of green areas; optional bbox filter.
+- `POST /directions`: Returns a GeoJSON route between start/end coordinates using OpenRouteService (profiles: walk, bike, car).
 
 Examples
 - Health: `curl http://localhost:8000/health`
@@ -39,6 +41,16 @@ Examples
 - Nearby POIs: `curl "http://localhost:8000/poi/nearby?lon=28.98&lat=41.04&r=750&poi_type=pharmacy"`
 - Search: `curl "http://localhost:8000/search?q=besiktas&size=5"`
 - Green areas: `curl http://localhost:8000/green_areas`
+- Directions (walk):
+  ```bash
+  curl -X POST http://localhost:8000/directions \
+    -H "Content-Type: application/json" \
+    -d '{
+      "start": {"lon": 28.9744, "lat": 41.0128},
+      "end": {"lon": 29.0200, "lat": 41.0450},
+      "mode": "walk"
+    }'
+  ```
 
 Responses
 - Success: `{ "status": "success", "data": ..., "message": "ok", "code": 200 }`

@@ -53,6 +53,7 @@ Environment variables
   - `POSTGRES_DB` (default `citistanbul`)
   - `POSTGRES_USER` (default `citistanbul`)
   - `POSTGRES_PASSWORD` (default `citistanbul`)
+  - `ORS_API_KEY`: OpenRouteService key used for `/directions`
 - Frontend (frontend/.env.*)
   - `NEXT_PUBLIC_API_URL`: Base URL of the FastAPI service
   - `NEXT_PUBLIC_MAPTILER_KEY`: Maptiler API key for the basemap style
@@ -67,6 +68,7 @@ API overview (FastAPI)
 - `GET /poi/nearby?lon=<lon>&lat=<lat>&r=<meters>[&poi_type=<type>]`: POIs near a point with optional type filter
 - `GET /green_areas[?bbox=minx,miny,maxx,maxy]`: green area polygons (limited by bbox or top N by area)
 - `GET /search?q=<q>[&size=<n>][&poi_type=<type>]`: fuzzy search across districts and POIs via Elasticsearch
+- `POST /directions`: proxy to OpenRouteService returning GeoJSON routes for walk/bike/car profiles
 
 Frontend overview (Next.js + MapLibre)
 - Map and layers: `frontend/components/*`

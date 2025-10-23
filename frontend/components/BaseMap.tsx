@@ -9,7 +9,18 @@ import UserLocationLayer from "@/components/UserLocationLayer";
 import SearchBar, { SelectedPoi } from "@/components/SearchBar";
 import SelectedPoiLayer from "@/components/SelectedPoiLayer";
 import NearbyPanel from "@/components/NearbyPanel";
+import RouteLayer from "@/components/RouteLayer";
+import DirectionsSidebar from "@/components/DirectionsSidebar";
 import { useState, useEffect } from "react";
+import type { Feature, LineString, BBox } from "geojson";
+import type { TravelMode } from "@/components/directions-utils";
+
+type OrsFeatureProperties = {
+  summary?: {
+    distance: number;
+    duration: number;
+  } | null;
+};
 import {
   Sheet,
   SheetContent,
@@ -51,6 +62,14 @@ export default function BaseMap() {
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<SelectedPoi | null>(null);
   const [userLocation, setUserLocation] = useState<{ lon: number; lat: number } | null>(null);
+  const [routeFeature, setRouteFeature] = useState<Feature<LineString> | null>(null);
+  const [routeBBox, setRouteBBox] = useState<BBox | null>(null);
+  const [routeSummary, setRouteSummary] = useState<{ distance: number; duration: number } | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const [activeMode, setActiveMode] = useState<TravelMode>("walk");
+  const [isDirectionsPanelOpen, setIsDirectionsPanelOpen] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Storage’dan yükle (sadece activeTypes)
   useEffect(() => {
@@ -62,6 +81,25 @@ export default function BaseMap() {
   useEffect(() => {
     localStorage.setItem("activeTypes", JSON.stringify(activeTypes));
   }, [activeTypes]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    let cancelled = false;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (cancelled) return;
+        setUserLocation({ lon: pos.coords.longitude, lat: pos.coords.latitude });
+      },
+      () => undefined,
+      { enableHighAccuracy: true }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleToggle = (type: string) => {
     setActiveTypes((prev) =>
@@ -78,6 +116,128 @@ export default function BaseMap() {
     } else {
       setActiveTypes((prev) => [...new Set([...prev, ...items])]);
     }
+  };
+
+  const clearRoute = ({ closePanel = false }: { closePanel?: boolean } = {}) => {
+    setRouteFeature(null);
+    setRouteBBox(null);
+    setRouteSummary(null);
+    setRouteError(null);
+    setRouteLoading(false);
+    if (closePanel) {
+      setIsDirectionsPanelOpen(false);
+    }
+  };
+
+  const handleSelectPoi = (poi: SelectedPoi | null) => {
+    if (poi) {
+      setSelectedPoiId(poi.id);
+      setSelectedPoi(poi);
+      setActiveMode("walk");
+      setIsDirectionsPanelOpen(true);
+      clearRoute({ closePanel: false });
+    } else {
+      setSelectedPoiId(null);
+      setSelectedPoi(null);
+      clearRoute({ closePanel: true });
+    }
+  };
+
+  const flyToLocation = (coords: { lon: number; lat: number }, zoom = 15) => {
+    const map = mapRef?.getMap();
+    if (map) {
+      map.flyTo({ center: [coords.lon, coords.lat], zoom, speed: 1.2 });
+    }
+  };
+
+  const handleRequestDirections = async (mode: TravelMode) => {
+    if (routeLoading) return;
+    if (!selectedPoi) return;
+
+    setActiveMode(mode);
+    setIsDirectionsPanelOpen(true);
+    setRouteError(null);
+
+    if (!userLocation) {
+      clearRoute({ closePanel: false });
+      setRouteError("Kullanıcı konumu bulunamadı");
+      return;
+    }
+
+    if (!API_URL) {
+      clearRoute({ closePanel: false });
+      setRouteError("API adresi tanımlı değil");
+      return;
+    }
+
+    setRouteLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/directions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start: userLocation,
+          end: { lon: selectedPoi.lon, lat: selectedPoi.lat },
+          mode,
+        }),
+      });
+      const json = await res.json();
+
+      if (!res.ok || json.status !== "success" || !json.data) {
+        const message = json.message || "Rota bulunamadı";
+        clearRoute({ closePanel: false });
+        setRouteError(message);
+        return;
+      }
+
+      const routeData = json.data;
+      const feature = routeData?.features?.[0] as Feature<LineString> | undefined;
+
+      if (!feature) {
+        clearRoute({ closePanel: false });
+        setRouteError("Geçerli rota yanıtı alınamadı");
+        return;
+      }
+
+      const props = (feature.properties ?? {}) as OrsFeatureProperties;
+      const summary = props.summary ?? null;
+      const bbox: BBox | null =
+        routeData?.bbox || feature.bbox || null;
+
+      setRouteFeature(feature);
+      setRouteBBox(bbox);
+      setRouteSummary(
+        summary
+          ? { distance: summary.distance, duration: summary.duration }
+          : null
+      );
+    } catch {
+      clearRoute({ closePanel: false });
+      setRouteError("Rota alınırken hata oluştu");
+    } finally {
+      setRouteLoading(false);
+    }
+  };
+
+  const handleGoToMyLocation = () => {
+    if (!navigator.geolocation) {
+      setRouteError("Tarayıcınız konum desteği vermiyor");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = { lon: pos.coords.longitude, lat: pos.coords.latitude };
+        setRouteError(null);
+        setUserLocation(coords);
+        flyToLocation(coords);
+      },
+      () => {
+        setRouteError("Konum izni reddedildi");
+      },
+      { enableHighAccuracy: true }
+    );
   };
 
   return (
@@ -97,28 +257,55 @@ export default function BaseMap() {
 
         {/* POI Katmanları */}
         {activeTypes.map((type) => (
-          <PoiLayer key={type} poiType={type} selectedPoiId={selectedPoiId} />
+          <PoiLayer
+            key={type}
+            poiType={type}
+            selectedPoiId={selectedPoiId}
+            onSelectPoi={handleSelectPoi}
+          />
         ))}
 
         {/* Kullanıcı konumu */}
-        <UserLocationLayer onLocationUpdate={(coords) => setUserLocation(coords)} />
+        <UserLocationLayer location={userLocation} />
+
+        {/* Rota */}
+        <RouteLayer feature={routeFeature} bbox={routeBBox} />
 
         {/* Seçili POI bağımsız marker */}
         {selectedPoi && <SelectedPoiLayer poi={selectedPoi} />}
       </Map>
 
+      <button
+        onClick={handleGoToMyLocation}
+        className={`fixed bottom-16 right-4 w-14 h-14 rounded-full border bg-white shadow-lg flex items-center justify-center hover:bg-gray-100 transition ${
+          isDirectionsPanelOpen ? "z-40" : "z-20"
+        }`}
+      >
+        <img
+          src="/navigator.png"
+          alt="Konumuma Git"
+          className="w-8 h-8"
+        />
+      </button>
+
+      <DirectionsSidebar
+        isOpen={isDirectionsPanelOpen}
+        poi={selectedPoi}
+        activeMode={activeMode}
+        routeSummary={routeSummary}
+        routeLoading={routeLoading}
+        routeError={routeError}
+        hasRoute={Boolean(routeFeature)}
+        onModeChange={setActiveMode}
+        onRequestRoute={handleRequestDirections}
+        onClearRoute={() => clearRoute({ closePanel: false })}
+        onClose={() => handleSelectPoi(null)}
+      />
+
       {/* Arama barı */}
       <SearchBar
         map={mapRef?.getMap() || null}
-        onSelectPoi={(poi) => {
-          if (poi) {
-            setSelectedPoiId(poi.id);
-            setSelectedPoi(poi);
-          } else {
-            setSelectedPoiId(null);
-            setSelectedPoi(null);
-          }
-        }}
+        onSelectPoi={handleSelectPoi}
       />
 
       {/* === Katman seçici === */}
@@ -246,8 +433,17 @@ export default function BaseMap() {
         userLocation={userLocation}
         radius={500}
         onSelectPoi={(poi) => {
-          setSelectedPoiId(poi.id);
-          setSelectedPoi(poi);
+          handleSelectPoi({
+            id: poi.id,
+            lon: poi.lon,
+            lat: poi.lat,
+            type: poi.type,
+            name: poi.name,
+            district_name: undefined,
+            address_text: poi.address_text,
+            poi_type_label: poi.poi_type_label,
+            subtype: poi.subtype,
+          });
 
           const map = mapRef?.getMap();
           if (map) {

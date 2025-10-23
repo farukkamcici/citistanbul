@@ -7,6 +7,17 @@ import maplibregl from "maplibre-gl";
 interface PoiLayerProps {
   poiType: string;
   selectedPoiId?: string | null;
+  onSelectPoi?: (poi: {
+    id: string;
+    lon: number;
+    lat: number;
+    type: string;
+    name?: string;
+    district_name?: string;
+    address_text?: string | null;
+    poi_type_label?: string;
+    subtype?: string | null;
+  }) => void;
 }
 
 const POI_LABELS: Record<string, string> = {
@@ -37,7 +48,7 @@ const POI_COLORS: Record<string, string> = {
   tram_station: "#14b8a6",
 };
 
-export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
+export default function PoiLayer({ poiType, selectedPoiId, onSelectPoi }: PoiLayerProps) {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
   const [poiData, setPoiData] = useState<any>(null);
@@ -87,8 +98,8 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
         type: "geojson",
         data: poiData,
         cluster: true,
-        clusterMaxZoom: 12,
-        clusterRadius: 50,
+        clusterMaxZoom: 11,
+        clusterRadius: 70,
       });
 
       map.addLayer({
@@ -167,57 +178,17 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
       const coords = (f.geometry as any).coordinates;
       const props = f.properties as any;
 
-      const typeLabel = POI_LABELS[props.poi_type] || props.poi_type;
-      const subtypeText =
-        props.poi_type === "bus_stop" && props.subtype
-          ? `Gidiş yönü: ${props.subtype}`
-          : props.subtype || "";
-
-      new maplibregl.Popup({ closeButton: true, offset: 15 })
-        .setLngLat(coords)
-        .setHTML(`
-          <div class="bg-white rounded-xl shadow-lg border p-4 w-64 space-y-2">
-            <!-- Başlık -->
-            <h3 class="text-sm font-semibold text-gray-900 truncate">
-              ${props.name || "İsimsiz"}
-            </h3>
-            <p class="text-xs text-gray-500">${props.district_name || ""}</p>
-        
-            <!-- Badge grubu -->
-            <div class="flex flex-wrap gap-1">
-              <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                ${typeLabel}
-              </span>
-              ${
-                subtypeText
-                  ? `<span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">${subtypeText}</span>`
-                  : ""
-              }
-            </div>
-        
-            <!-- Adres -->
-            ${
-              props.address
-                ? `<p class="text-xs text-gray-600 line-clamp-2">${props.address}</p>`
-                : ""
-            }
-        
-            <!-- Buton -->
-            <div class="pt-2">
-              <a
-                href="https://www.google.com/maps/dir/?api=1&destination=${coords[1]},${coords[0]}"
-                target="_blank"
-                class="inline-flex items-center justify-center w-full
-                       px-3 py-1.5 text-xs font-medium
-                       bg-blue-600 text-white rounded-lg shadow-sm
-                       hover:bg-blue-700 transition-colors"
-              >
-                Google Maps’te Aç
-              </a>
-            </div>
-          </div>
-        `)
-        .addTo(map);
+      onSelectPoi?.({
+        id: props.poi_id,
+        lon: coords[0],
+        lat: coords[1],
+        type: props.poi_type,
+        name: props.name,
+        district_name: props.district_name,
+        address_text: props.address || props.address_text || null,
+        poi_type_label: POI_LABELS[props.poi_type] || props.poi_type,
+        subtype: props.subtype,
+      });
     };
 
     map.on("click", onClick);
@@ -230,7 +201,7 @@ export default function PoiLayer({ poiType, selectedPoiId }: PoiLayerProps) {
       if (map.getLayer(unclusteredId)) map.removeLayer(unclusteredId);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     };
-  }, [map, poiData, poiType, selectedPoiId]);
+  }, [map, poiData, poiType, selectedPoiId, onSelectPoi]);
 
   return null;
 }
