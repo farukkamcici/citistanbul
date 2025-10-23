@@ -64,14 +64,11 @@ services:
       DATABASE_URL: postgresql://citistanbul:citistanbul@db:5432/citistanbul
 
       ELASTIC_URL: http://es:9200
-
-      GEMINI_KEY: /run/secrets/gemini_key
-
-      ORS_KEY: /run/secrets/ors_key
     volumes:
       - hf_cache:/root/.cache/huggingface
     secrets:
       - gemini_key
+      - ors_key
     depends_on:
 
       - db
@@ -100,3 +97,6 @@ networks:
 secrets:
   gemini_key:
     file: /etc/citistanbul/secrets/gemini_key.txt
+  ors_key:
+    file: /etc/citistanbul/secrets/ors_key.txt
+
