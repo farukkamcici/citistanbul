@@ -65,7 +65,9 @@ services:
 
       ELASTIC_URL: http://es:9200
 
-      GEMINI_API_KEY_FILE: /run/secrets/gemini_key
+      GEMINI_KEY: /run/secrets/gemini_key
+
+      ORS_KEY: /run/secrets/ors_key
     volumes:
       - hf_cache:/root/.cache/huggingface
     secrets:
