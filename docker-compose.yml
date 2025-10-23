@@ -68,6 +68,7 @@ services:
       - hf_cache:/root/.cache/huggingface
     secrets:
       - gemini_key
+
       - ors_key
     depends_on:
 
@@ -97,6 +98,7 @@ networks:
 secrets:
   gemini_key:
     file: /etc/citistanbul/secrets/gemini_key.txt
+
   ors_key:
     file: /etc/citistanbul/secrets/ors_key.txt
 
