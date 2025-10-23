@@ -1,5 +1,7 @@
-from elasticsearch import Elasticsearch, helpers
+import os
 import psycopg2
+import psycopg2.extras
+from elasticsearch import Elasticsearch, helpers
 
 # --- Türkçe type labels ---
 TYPE_LABELS = {
@@ -16,57 +18,69 @@ TYPE_LABELS = {
     "tram_station": "Tramvay İstasyonu",
 }
 
-pg_conn = psycopg2.connect(
-    dbname="citistanbul",
-    user="citistanbul",
-    password="citistanbul",
-    host="localhost",
-    port=5432
-)
-pg_cur = pg_conn.cursor()
+# Ortam değişkenlerinden bağlantı bilgileri
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://citistanbul:citistanbul@db:5432/citistanbul")
+ELASTIC_URL = os.getenv("ELASTIC_URL", "http://es:9200")
 
-es = Elasticsearch("http://localhost:9200")
+def main():
+    print(f"Connecting to Postgres: {DATABASE_URL}")
+    print(f"Connecting to Elasticsearch: {ELASTIC_URL}")
 
-# Postgres'ten POIs çek
-pg_cur.execute("""
-    SELECT 
-        poi_id, 
-        name, 
-        poi_type, 
-        subtype, 
-        district_name, 
-        address_text,
-        ST_X(geom)::float AS lon,
-        ST_Y(geom)::float AS lat
-    FROM city.pois;
-""")
-rows = pg_cur.fetchall()
+    # Postgres bağlantısı
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    cur = conn.cursor()
 
-# Bulk için doküman hazırlığı
-actions = []
-for row in rows:
-    poi_id, name, poi_type, subtype, district_name, address_text, lon, lat = row
-    doc = {
-        "_index": "pois",
-        "_id": poi_id,
-        "_source": {
-            "poi_id": poi_id,
-            "name": name,
-            "poi_type": poi_type,
-            "poi_type_label": TYPE_LABELS.get(poi_type, poi_type),
-            "subtype": subtype,
-            "district_name": district_name,
-            "address_text": address_text,
-            "lon": lon,
-            "lat": lat,
+    # Elasticsearch bağlantısı
+    es = Elasticsearch(ELASTIC_URL)
+
+    # Postgres'ten POI verilerini çek
+    cur.execute("""
+        SELECT 
+            poi_id, 
+            name, 
+            poi_type, 
+            subtype, 
+            district_name, 
+            address_text,
+            ST_X(geom)::float AS lon,
+            ST_Y(geom)::float AS lat
+        FROM city.pois;
+    """)
+    rows = cur.fetchall()
+    print(f"Fetched {len(rows)} POIs from PostGIS")
+
+    # Bulk index için doküman listesi
+    actions = []
+    for row in rows:
+        doc = {
+            "_index": "pois",
+            "_id": row["poi_id"],
+            "_source": {
+                "poi_id": row["poi_id"],
+                "name": row["name"],
+                "poi_type": row["poi_type"],
+                "poi_type_label": TYPE_LABELS.get(row["poi_type"], row["poi_type"]),
+                "subtype": row["subtype"],
+                "district_name": row["district_name"],
+                "address_text": row["address_text"],
+                "lon": row["lon"],
+                "lat": row["lat"],
+            },
         }
-    }
-    actions.append(doc)
+        actions.append(doc)
 
-# Elasticsearch'e bulk yükle
-helpers.bulk(es, actions)
+    if actions:
+        helpers.bulk(es, actions)
+        print(f"✅ {len(actions)} POIs indexed to Elasticsearch.")
+    else:
+        print("⚠️ No POIs found to index.")
 
-print(f"{len(actions)} POIs indexed to Elasticsearch")
+    cur.close()
+    conn.close()
 
-pg_cur.close()
-pg_conn.close()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print("❌ Error during POI indexing:", e)
