@@ -295,7 +295,10 @@ export function DirectionsSheet({
             : "max-h-[32vh] pb-4"
         )}
       >
-        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
+        <div
+          data-sheet-drag-handle
+          className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300"
+        />
         <SheetHeader
           className={cn(
             "border-b border-gray-100 px-4 pt-2 pb-3 transition",

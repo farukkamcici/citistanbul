@@ -115,7 +115,10 @@ export default function NearbyPanel({
         side="bottom"
         className="max-h-[75vh] flex flex-col rounded-t-3xl border-t border-gray-200 bg-white px-0 pb-6 sm:side-left sm:w-80 sm:max-h-screen"
       >
-        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
+        <div
+          data-sheet-drag-handle
+          className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300"
+        />
         {/* Header sabit */}
         <div className="sticky top-0 z-10 border-b border-gray-100 bg-white">
           <SheetHeader className="flex flex-row items-center justify-between px-4 py-3">

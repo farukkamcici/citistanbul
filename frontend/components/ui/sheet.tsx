@@ -87,53 +87,134 @@ const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>
       const content = localRef.current
       if (!content || side !== "bottom") return
 
+      const CLOSE_THRESHOLD = 120
+      const TRIGGER_THRESHOLD = 60
+      const PULL_UP_LIMIT = 80
+      const DRAG_ZONE_HEIGHT = 96
+      const NO_DRAG_SELECTOR = "[data-sheet-no-drag]"
+
       let startY = 0
       let currentY = 0
       let dragging = false
       let direction: "none" | "up" | "down" = "none"
-      const CLOSE_THRESHOLD = 120
-      const TRIGGER_THRESHOLD = 60
+      let activePointerId: number | null = null
+      let originalTouchAction: string | null = null
+      let rafId: number | null = null
+      const timeouts = new Set<number>()
 
-      const reset = () => {
-        content.style.transition = ""
-        content.style.transform = ""
+      const storeTouchAction = () => {
+        if (originalTouchAction === null) {
+          const existing = content.style.touchAction
+          originalTouchAction = existing && existing.length > 0 ? existing : "__unset__"
+        }
+        content.style.touchAction = "none"
       }
 
-      const handleTouchStart = (event: TouchEvent) => {
-        if (event.touches.length !== 1) return
-        startY = event.touches[0].clientY
-        currentY = startY
-        dragging = true
-        content.style.transition = "none"
-        direction = "none"
-      }
-
-      const handleTouchMove = (event: TouchEvent) => {
-        if (!dragging) return
-        currentY = event.touches[0].clientY
-        const deltaY = currentY - startY
-        if (deltaY > 0) {
-          direction = "down"
-          event.preventDefault()
-          content.style.transform = `translateY(${deltaY}px)`
-        } else if (deltaY < 0) {
-          direction = "up"
-          if (onSwipeUp) {
-            event.preventDefault()
-            const limited = Math.max(deltaY, -40)
-            content.style.transform = `translateY(${limited}px)`
-          } else {
-            content.style.transform = "translateY(0)"
-          }
+      const releaseTouchAction = () => {
+        if (originalTouchAction === null) return
+        if (originalTouchAction === "__unset__") {
+          content.style.removeProperty("touch-action")
         } else {
-          direction = "none"
-          content.style.transform = "translateY(0)"
+          content.style.touchAction = originalTouchAction
+        }
+        originalTouchAction = null
+      }
+
+      const clearAnimationFrame = () => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+          rafId = null
         }
       }
 
-      const handleTouchEnd = () => {
+      const setTransform = (value: string) => {
+        clearAnimationFrame()
+        rafId = requestAnimationFrame(() => {
+          content.style.transform = value
+        })
+      }
+
+      const resetStyles = () => {
+        clearAnimationFrame()
+        content.style.transition = ""
+        content.style.transform = ""
+        content.style.willChange = ""
+        releaseTouchAction()
+      }
+
+      const scheduleReset = (delay = 200) => {
+        const timeout = window.setTimeout(() => {
+          resetStyles()
+          timeouts.delete(timeout)
+        }, delay)
+        timeouts.add(timeout)
+      }
+
+      const canStartDrag = (event: PointerEvent | TouchEvent) => {
+        const target = event.target as Element | null
+        if (target?.closest(NO_DRAG_SELECTOR)) return false
+        if (target?.closest("[data-sheet-drag-handle]")) return true
+        if (target?.closest("[data-sheet-drag-region]")) return true
+
+        const clientY =
+          "touches" in event
+            ? event.touches[0]?.clientY ?? 0
+            : event.clientY
+
+        const { top } = content.getBoundingClientRect()
+        return clientY - top <= DRAG_ZONE_HEIGHT
+      }
+
+      const beginDrag = (start: number) => {
+        dragging = true
+        startY = start
+        currentY = start
+        direction = "none"
+        content.style.transition = "none"
+        content.style.willChange = "transform"
+        storeTouchAction()
+      }
+
+      const updateDrag = (
+        clientY: number,
+        preventDefault?: () => void
+      ) => {
+        if (!dragging) return
+        currentY = clientY
+        const deltaY = currentY - startY
+
+        if (deltaY > 0) {
+          direction = "down"
+          preventDefault?.()
+          setTransform(`translateY(${deltaY}px)`)
+        } else if (deltaY < 0) {
+          direction = "up"
+          if (onSwipeUp) {
+            preventDefault?.()
+            const limited = Math.max(deltaY, -PULL_UP_LIMIT)
+            setTransform(`translateY(${limited}px)`)
+          } else {
+            setTransform("translateY(0)")
+          }
+        } else {
+          direction = "none"
+          setTransform("translateY(0)")
+        }
+      }
+
+      const finishDrag = () => {
         if (!dragging) return
         dragging = false
+
+        if (activePointerId !== null) {
+          try {
+            content.releasePointerCapture(activePointerId)
+          } catch {
+            // ignore
+          }
+        }
+        activePointerId = null
+
         const delta = currentY - startY
         content.style.transition = "transform 0.2s ease-out"
 
@@ -146,41 +227,126 @@ const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>
           }
 
           if (!handled && deltaY > CLOSE_THRESHOLD) {
-            content.style.transform = "translateY(100%)"
+            setTransform("translateY(100%)")
             window.setTimeout(() => {
               closeRef.current?.click()
             }, 160)
+            scheduleReset(220)
           } else {
-            content.style.transform = "translateY(0)"
-            window.setTimeout(() => {
-              reset()
-            }, 200)
+            setTransform("translateY(0)")
+            scheduleReset(200)
           }
         } else if (direction === "up" && delta < 0) {
-          const deltaY = Math.abs(delta)
-          if (deltaY > TRIGGER_THRESHOLD && onSwipeUp) {
-            handled = onSwipeUp(deltaY) === true
+          const magnitude = Math.abs(delta)
+          if (magnitude > TRIGGER_THRESHOLD && onSwipeUp) {
+            handled = onSwipeUp(magnitude) === true
           }
-          content.style.transform = "translateY(0)"
-          window.setTimeout(() => {
-            reset()
-          }, 150)
+          setTransform("translateY(0)")
+          scheduleReset(150)
         } else {
-          content.style.transform = "translateY(0)"
-          window.setTimeout(() => {
-            reset()
-          }, 150)
+          setTransform("translateY(0)")
+          scheduleReset(150)
+        }
+
+        direction = "none"
+      }
+
+      const cancelDrag = () => {
+        if (!dragging) return
+        dragging = false
+
+        if (activePointerId !== null) {
+          try {
+            content.releasePointerCapture(activePointerId)
+          } catch {
+            // ignore
+          }
+        }
+        activePointerId = null
+
+        content.style.transition = "transform 0.2s ease-out"
+        setTransform("translateY(0)")
+        scheduleReset(200)
+        direction = "none"
+      }
+
+      const supportsPointerEvents =
+        typeof window !== "undefined" && "PointerEvent" in window
+
+      if (supportsPointerEvents) {
+        const handlePointerDown = (event: PointerEvent) => {
+          if (event.pointerType !== "touch" && event.pointerType !== "pen") {
+            return
+          }
+          if (dragging || !canStartDrag(event)) {
+            return
+          }
+
+          activePointerId = event.pointerId
+          beginDrag(event.clientY)
+          if (event.cancelable) event.preventDefault()
+
+          try {
+            content.setPointerCapture(event.pointerId)
+          } catch {
+            // ignore capture errors
+          }
+        }
+
+        const handlePointerMove = (event: PointerEvent) => {
+          if (!dragging || event.pointerId !== activePointerId) return
+          updateDrag(event.clientY, () => {
+            if (event.cancelable) event.preventDefault()
+          })
+        }
+
+        const handlePointerUp = (event: PointerEvent) => {
+          if (event.pointerId !== activePointerId) return
+          if (event.cancelable) event.preventDefault()
+          finishDrag()
+        }
+
+        const handlePointerCancel = (event: PointerEvent) => {
+          if (event.pointerId !== activePointerId) return
+          cancelDrag()
+        }
+
+        content.addEventListener("pointerdown", handlePointerDown)
+        window.addEventListener("pointermove", handlePointerMove)
+        window.addEventListener("pointerup", handlePointerUp)
+        window.addEventListener("pointercancel", handlePointerCancel)
+
+        return () => {
+          content.removeEventListener("pointerdown", handlePointerDown)
+          window.removeEventListener("pointermove", handlePointerMove)
+          window.removeEventListener("pointerup", handlePointerUp)
+          window.removeEventListener("pointercancel", handlePointerCancel)
+          timeouts.forEach((timeout) => window.clearTimeout(timeout))
+          timeouts.clear()
+          cancelDrag()
+          resetStyles()
         }
       }
 
-      const handleTouchCancel = () => {
+      const handleTouchStart = (event: TouchEvent) => {
+        if (event.touches.length !== 1 || dragging) return
+        if (!canStartDrag(event)) return
+        beginDrag(event.touches[0].clientY)
+      }
+
+      const handleTouchMove = (event: TouchEvent) => {
         if (!dragging) return
-        dragging = false
-        content.style.transition = "transform 0.2s ease-out"
-        content.style.transform = "translateY(0)"
-        window.setTimeout(() => {
-          reset()
-        }, 200)
+        updateDrag(event.touches[0].clientY, () => {
+          if (event.cancelable) event.preventDefault()
+        })
+      }
+
+      const handleTouchEnd = () => {
+        finishDrag()
+      }
+
+      const handleTouchCancel = () => {
+        cancelDrag()
       }
 
       content.addEventListener("touchstart", handleTouchStart, { passive: true })
@@ -193,9 +359,12 @@ const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>
         content.removeEventListener("touchmove", handleTouchMove)
         content.removeEventListener("touchend", handleTouchEnd)
         content.removeEventListener("touchcancel", handleTouchCancel)
-        reset()
+        timeouts.forEach((timeout) => window.clearTimeout(timeout))
+        timeouts.clear()
+        cancelDrag()
+        resetStyles()
       }
-    }, [onSwipeDown, side])
+    }, [onSwipeDown, onSwipeUp, side])
 
     return (
       <SheetPortal>
@@ -220,6 +389,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>
           {children}
           <SheetPrimitive.Close
             ref={closeRef}
+            data-sheet-no-drag
             className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
           >
             <XIcon className="size-4" />
@@ -237,6 +407,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
+      data-sheet-drag-region
       className={cn("flex flex-col gap-1.5 p-4", className)}
       {...props}
     />

@@ -153,7 +153,10 @@ export default function DistrictLayer() {
           side="bottom"
           className="max-h-[75vh] flex flex-col rounded-t-3xl border-t border-gray-200 bg-white px-0 pb-6"
         >
-          <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
+          <div
+            data-sheet-drag-handle
+            className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300"
+          />
           <SheetHeader className="px-4 pb-3 border-b border-gray-100">
             <SheetTitle className="font-semibold text-gray-900">
               İlçe Yoğunluk Haritası
