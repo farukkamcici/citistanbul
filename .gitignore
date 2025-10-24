@@ -52,3 +52,4 @@ logs/
 *.pid
 *.log
 docker-data/
+/todo.txt

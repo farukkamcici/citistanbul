@@ -142,6 +142,12 @@ export default function PoiLayer({ poiType, selectedPoiId, onSelectPoi }: PoiLay
     }
 
     const onClick = (e: maplibregl.MapMouseEvent) => {
+      const original = e.originalEvent as (MouseEvent & { __poiHandled?: boolean }) | undefined;
+      if (original) {
+        original.__poiHandled = true;
+        original.stopPropagation();
+        original.preventDefault();
+      }
       const features = map.queryRenderedFeatures(e.point, {
         layers: [unclusteredId],
       });

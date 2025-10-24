@@ -89,6 +89,10 @@ export default function DistrictLayer() {
   useEffect(() => {
     if (!map) return;
     const handleClick = (e: any) => {
+      const original = e.originalEvent as (MouseEvent & { __poiHandled?: boolean }) | undefined;
+      if (original?.__poiHandled) {
+        return;
+      }
       const props = e.features?.[0]?.properties;
       if (!props) {
         setDistrictData(null);
