@@ -123,13 +123,6 @@ export default function NearbyPanel({
               <img src="/near.svg" alt="Yakınımda" className="h-5 w-5" />
               Yakınımda
             </SheetTitle>
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-              aria-label="Paneli kapat"
-            >
-              ✕
-            </button>
           </SheetHeader>
         </div>
 
