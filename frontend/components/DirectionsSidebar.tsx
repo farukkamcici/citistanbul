@@ -251,7 +251,7 @@ export function DirectionsSheet({
   };
 
   const handleSwipeDown = React.useCallback(
-    (delta: number) => {
+    (_delta: number) => {
       if (viewState === "expanded") {
         setViewState("peek");
         return true;
