@@ -69,6 +69,7 @@ frontend/
 │  ├─ GreenAreasLayer.tsx       # Dynamic green areas layer (by map bbox)
 │  ├─ SearchBar.tsx             # Search & Assistant bar (districts/POIs/RAG)
 │  ├─ NearbyPanel.tsx           # “Yakınımda” grouped POIs around user
+│  ├─ poi-config.ts             # Shared POI metadata (labels, colors, categories)
 │  └─ ui/                       # Radix-based UI components (sheet, dialog...)
 │     ├─ button.tsx
 │     ├─ card.tsx
@@ -107,12 +108,14 @@ frontend/
   - `SelectedPoiLayer` to highlight a single selected POI independently of clusters.
   - `SearchBar` for locating districts/POIs and querying the assistant.
   - `NearbyPanel` to list nearby POIs by category, driven by `userLocation`.
+  - `DirectionsSidebar`/`DirectionsSheet` to review routes without leaving the map.
 - Layer selector:
-  - Mobile: `Sheet` bottom drawer with category toggles.
+  - Mobile: `Sheet` bottom drawer with category toggles and legend chips.
   - Desktop: `Collapsible` side panel with category and item toggles.
+- Each POI toggle renders a color chip sourced from `poi-config.ts`, matching the markers on the map.
 
 Tips:
-- Add or remove categories in `POI_CATEGORIES` inside `BaseMap.tsx`.
+- Add or remove categories in `poi-config.ts` (`POI_CATEGORIES`).
 - The map style uses MapTiler via `NEXT_PUBLIC_MAPTILER_KEY`.
 
 ### components/DistrictLayer.tsx
@@ -131,21 +134,24 @@ How it’s used:
 - Displays POIs for a given `poiType` prop.
 - Fetches data from `GET /poi?poi_type={type}&bbox={minx,miny,maxx,maxy}` whenever the map’s viewport changes (`moveend`).
 - Uses MapLibre GL clustering for performance at low zooms.
-- Draws unclustered POIs as styled circles; colors are defined in `POI_COLORS`.
+- Draws unclustered POIs as styled circles; colors are defined in `POI_COLORS` from `poi-config.ts`.
 - Highlights a POI when its id matches `selectedPoiId`.
 - Click on an unclustered point shows a richly styled popup with name, district, subtype, address, and a Google Maps directions link.
 
 How to add a new POI type:
-1) Add a label and color in `POI_LABELS` and `POI_COLORS`.
-2) Add the type to `POI_CATEGORIES` in `BaseMap.tsx` for toggling.
+1) Add a label and color in `POI_LABELS` and `POI_COLORS` within `poi-config.ts`.
+2) Add the type to `POI_CATEGORIES` in `poi-config.ts` for toggling.
 3) Ensure backend supports the new `poi_type` in `GET /poi`.
 
 ### components/SelectedPoiLayer.tsx
 - Highlights the selected POI on the map with a styled marker; all interaction happens in the directions sidebar.
 
 ### components/DirectionsSidebar.tsx
-- Fixed right-hand panel that opens as soon as a POI is selected, showing details, travel-mode toggles, a "Konumum" button, and the route summary/error states.
-- Manages all routing actions (get directions, clear route, open in Google Maps) without covering the map.
+- Responsive directions experience:
+  - Desktop: fixed right-hand sidebar with travel-mode toggles, route summary, errors, and quick actions.
+  - Mobile: swipeable bottom sheet with two states — expanded details (route options, actions, summary) and a compact peek header showing POI info, type chips, distance, and ETA.
+- Manages all routing actions (get directions, clear route, open in Google Maps) while keeping the map visible.
+- Utilises gesture-aware sheets so users can collapse with a short downward swipe or close with a longer pull.
 
 ### components/RouteLayer.tsx
 - Adds the current OpenRouteService route as a styled line layer.
@@ -175,7 +181,7 @@ How to add a new POI type:
 - Selecting a POI calls `onSelectPoi` to highlight and center it on the map.
 
 ### components/ui/* (Radix wrappers)
-- `sheet.tsx`: responsive panels (used for mobile layer selector and Nearby panel).
+- `sheet.tsx`: responsive panels with swipe gestures for mobile sheets (used by layer selector, Nearby panel, and directions).
 - `collapsible.tsx`: collapsible sections (used for desktop panels).
 - `dialog.tsx`: modal dialog wrapper (available if needed later).
 - `button.tsx`, `card.tsx`: styled primitives used across UI.
@@ -214,3 +220,4 @@ All are requested from `NEXT_PUBLIC_API_URL`.
 
 - The app stores layer selections in `localStorage` (key: `activeTypes`).
 - Component communication leverages React props and `useMap()` from `react-map-gl` to reach the MapLibre instance.
+- Mobile users can collapse or close bottom sheets (layers, nearby, directions) with swipe gestures for a map-first experience.

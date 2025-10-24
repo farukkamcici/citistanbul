@@ -72,7 +72,7 @@ API overview (FastAPI)
 
 Frontend overview (Next.js + MapLibre)
 - Map and layers: `frontend/components/*`
-  - `BaseMap.tsx`: main map, category toggles, sheet/collapsible UI
+  - `BaseMap.tsx`: main map shell with responsive layer toggles, mobile bottom sheets, and POI color legend chips
   - `DistrictLayer.tsx`: district polygons + choropleth by selected metric
   - `PoiLayer.tsx`: clustered point layers by POI type, popups, highlight selection
   - `GreenAreasLayer.tsx`: green areas fill/outline, auto‑refresh on move
@@ -80,6 +80,8 @@ Frontend overview (Next.js + MapLibre)
   - `SelectedPoiLayer.tsx`: emphasized marker + rich popup for a chosen POI
   - `NearbyPanel.tsx`: “near me” drawer that groups nearby POIs by category
   - `SearchBar.tsx`: ES‑backed search with district bbox zoom and POI fly‑to
+  - `DirectionsSidebar.tsx`: responsive directions experience (desktop sidebar + mobile sheet with swipe/peek states)
+  - `poi-config.ts`: shared POI labels/colors/categories reused across map layers and UI legends
 - App shell: `frontend/app/*` (`layout.tsx`, `page.tsx`)
 - UI primitives: `frontend/components/ui/*` (Radix wrappers and utilities)
 
@@ -116,7 +118,7 @@ Directory-by-directory
   - `README.md`: API quick start and endpoint docs
 - `frontend/`: Next.js app (App Router)
   - `app/`: layout and entry page
-  - `components/`: map layers, UI, and utilities
+  - `components/`: map layers, UI, and utilities (including shared POI config and responsive sheets)
   - `lib/utils.ts`: classnames merge util
   - `.env.development`: API URL and Maptiler key for dev
 - `data/`: datasets
