@@ -10,7 +10,9 @@ import SearchBar, { SelectedPoi } from "@/components/SearchBar";
 import SelectedPoiLayer from "@/components/SelectedPoiLayer";
 import NearbyPanel from "@/components/NearbyPanel";
 import RouteLayer from "@/components/RouteLayer";
-import DirectionsSidebar from "@/components/DirectionsSidebar";
+import DirectionsSidebar, {
+  DirectionsSheet,
+} from "@/components/DirectionsSidebar";
 import { POI_CATEGORIES, POI_COLORS } from "@/components/poi-config";
 import { useState, useEffect } from "react";
 import type { Feature, LineString, BBox } from "geojson";
@@ -48,6 +50,12 @@ export default function BaseMap() {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [activeMode, setActiveMode] = useState<TravelMode>("walk");
   const [isDirectionsPanelOpen, setIsDirectionsPanelOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.matchMedia("(max-width: 767px)").matches;
+  });
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Storage’dan yükle (sadece activeTypes)
@@ -78,6 +86,28 @@ export default function BaseMap() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
+    };
+
+    // Update immediately in case something changed since initial render
+    setIsMobile(mq.matches);
+
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", handleChange);
+      return () => mq.removeEventListener("change", handleChange);
+    }
+
+    mq.addListener(handleChange);
+    return () => mq.removeListener(handleChange);
   }, []);
 
   const handleToggle = (type: string) => {
@@ -267,19 +297,37 @@ export default function BaseMap() {
         />
       </button>
 
-      <DirectionsSidebar
-        isOpen={isDirectionsPanelOpen}
-        poi={selectedPoi}
-        activeMode={activeMode}
-        routeSummary={routeSummary}
-        routeLoading={routeLoading}
-        routeError={routeError}
-        hasRoute={Boolean(routeFeature)}
-        onModeChange={setActiveMode}
-        onRequestRoute={handleRequestDirections}
-        onClearRoute={() => clearRoute({ closePanel: false })}
-        onClose={() => handleSelectPoi(null)}
-      />
+      {!isMobile && (
+        <DirectionsSidebar
+          isOpen={isDirectionsPanelOpen}
+          poi={selectedPoi}
+          activeMode={activeMode}
+          routeSummary={routeSummary}
+          routeLoading={routeLoading}
+          routeError={routeError}
+          hasRoute={Boolean(routeFeature)}
+          onModeChange={setActiveMode}
+          onRequestRoute={handleRequestDirections}
+          onClearRoute={() => clearRoute({ closePanel: false })}
+          onClose={() => handleSelectPoi(null)}
+        />
+      )}
+
+      {isMobile && (
+        <DirectionsSheet
+          isOpen={isDirectionsPanelOpen}
+          poi={selectedPoi}
+          activeMode={activeMode}
+          routeSummary={routeSummary}
+          routeLoading={routeLoading}
+          routeError={routeError}
+          hasRoute={Boolean(routeFeature)}
+          onModeChange={setActiveMode}
+          onRequestRoute={handleRequestDirections}
+          onClearRoute={() => clearRoute({ closePanel: false })}
+          onClose={() => handleSelectPoi(null)}
+        />
+      )}
 
       {/* Arama barı */}
       <SearchBar
@@ -303,14 +351,18 @@ export default function BaseMap() {
             </button>
           </SheetTrigger>
 
-          <SheetContent side="bottom" className="max-h-[70vh] flex flex-col">
-            <SheetHeader className="border-b pb-2">
+          <SheetContent
+            side="bottom"
+            className="flex max-h-[75vh] flex-col rounded-t-3xl border-t border-gray-200 bg-white px-0 pb-6"
+          >
+            <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
+            <SheetHeader className="px-4 pb-3 border-b border-gray-100">
               <SheetTitle className="text-base font-semibold text-gray-900">
                 Katmanlar
               </SheetTitle>
             </SheetHeader>
 
-            <div className="mt-4 px-4 py-2 space-y-4 overflow-y-auto max-h-[60vh]">
+            <div className="mt-2 px-4 space-y-4 overflow-y-auto">
               {Object.entries(POI_CATEGORIES).map(([category, items]) => {
                 const allSelected = items.every((poi) =>
                   activeTypes.includes(poi.key)
@@ -326,7 +378,7 @@ export default function BaseMap() {
                         className="accent-blue-600 cursor-pointer"
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {items.map((poi) => (
                         <label
                           key={poi.key}
@@ -389,7 +441,7 @@ export default function BaseMap() {
                       className="accent-blue-600 cursor-pointer"
                     />
                   </div>
-                  <div className="space-y-1">
+                    <div className="space-y-1.5">
                     {items.map((poi) => (
                       <label
                         key={poi.key}

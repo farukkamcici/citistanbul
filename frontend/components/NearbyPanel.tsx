@@ -113,25 +113,20 @@ export default function NearbyPanel({
       {/* Panel */}
       <SheetContent
         side="bottom"
-        className="
-          max-h-[70vh] sm:side-left sm:w-80 sm:max-h-screen
-          flex flex-col p-0
-        "
+        className="max-h-[75vh] flex flex-col rounded-t-3xl border-t border-gray-200 bg-white px-0 pb-6 sm:side-left sm:w-80 sm:max-h-screen"
       >
+        <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
         {/* Header sabit */}
-        <div className="sticky top-0 z-10 bg-white border-b">
+        <div className="sticky top-0 z-10 border-b border-gray-100 bg-white">
           <SheetHeader className="flex flex-row items-center justify-between px-4 py-3">
-            <SheetTitle className="text-gray-900 font-semibold flex items-center gap-2">
-              <img
-                src="/near.svg"
-                alt="Yakınımda"
-                className="w-5 h-5"
-              />
-              <span className="text-base font-medium text-gray-800">Yakınımda</span>
+            <SheetTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
+              <img src="/near.svg" alt="Yakınımda" className="h-5 w-5" />
+              Yakınımda
             </SheetTitle>
             <button
               onClick={() => setOpen(false)}
-              className="text-gray-500 hover:text-gray-800"
+              className="rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+              aria-label="Paneli kapat"
             >
               ✕
             </button>
@@ -139,7 +134,7 @@ export default function NearbyPanel({
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
           {loading && <p className="text-gray-700">Yükleniyor...</p>}
           {!loading && Object.keys(pois).length === 0 && (
             <p className="text-gray-700">Sonuç bulunamadı</p>

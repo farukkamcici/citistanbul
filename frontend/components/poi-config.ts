@@ -3,7 +3,7 @@ export const POI_LABELS: Record<string, string> = {
   bus_stop: "Otobüs Durağı",
   ev_charger: "Elektrikli Araç Şarjı",
   health: "Sağlık Tesisi",
-  kiosk: "Büfe",
+  kiosk: "İHE Büfe",
   metro_station: "Metro İstasyonu",
   micro_mobility_parking: "Mikro Mobilite Park Alanı",
   museum: "Müze",
