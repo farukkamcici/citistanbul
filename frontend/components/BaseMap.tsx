@@ -11,6 +11,7 @@ import SelectedPoiLayer from "@/components/SelectedPoiLayer";
 import NearbyPanel from "@/components/NearbyPanel";
 import RouteLayer from "@/components/RouteLayer";
 import DirectionsSidebar from "@/components/DirectionsSidebar";
+import { POI_CATEGORIES, POI_COLORS } from "@/components/poi-config";
 import { useState, useEffect } from "react";
 import type { Feature, LineString, BBox } from "geojson";
 import type { TravelMode } from "@/components/directions-utils";
@@ -33,28 +34,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-
-const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
-  "Ulaşım": [
-    { key: "bus_stop", label: "Otobüs Durağı" },
-    { key: "metro_station", label: "Metro İstasyonu" },
-    { key: "tram_station", label: "Tramvay İstasyonu" },
-  ],
-  "Altyapı": [
-    { key: "ev_charger", label: "Elektrikli Araç Şarj" },
-    { key: "toilet", label: "Tuvalet" },
-    { key: "bike_parking", label: "Bisiklet Parkı" },
-    { key: "micro_mobility_parking", label: "Mikro Mobilite Parkı" },
-  ],
-  "Kültür & Ticaret": [
-    { key: "museum", label: "Müze" },
-    { key: "theater", label: "Tiyatro" },
-    { key: "kiosk", label: "İHE Büfe" },
-  ],
-  "Sağlık": [
-    { key: "health", label: "Sağlık Tesisi" },
-  ],
-};
 
 export default function BaseMap() {
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
@@ -351,7 +330,7 @@ export default function BaseMap() {
                       {items.map((poi) => (
                         <label
                           key={poi.key}
-                          className="flex items-center space-x-2 text-sm p-2 rounded-md hover:bg-gray-50"
+                          className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-gray-50"
                         >
                           <input
                             type="checkbox"
@@ -359,7 +338,12 @@ export default function BaseMap() {
                             onChange={() => handleToggle(poi.key)}
                             className="accent-blue-600"
                           />
-                          <span>{poi.label}</span>
+                          <span className="flex-1">{poi.label}</span>
+                          <span
+                            className="w-3 h-3 rounded-full border border-gray-200"
+                            style={{ backgroundColor: POI_COLORS[poi.key] ?? "#888" }}
+                            aria-hidden="true"
+                          />
                         </label>
                       ))}
                     </div>
@@ -409,7 +393,7 @@ export default function BaseMap() {
                     {items.map((poi) => (
                       <label
                         key={poi.key}
-                        className="flex items-center space-x-2 text-sm p-2 rounded-md hover:bg-gray-50"
+                        className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-gray-50"
                       >
                         <input
                           type="checkbox"
@@ -417,7 +401,12 @@ export default function BaseMap() {
                           onChange={() => handleToggle(poi.key)}
                           className="accent-blue-600"
                         />
-                        <span>{poi.label}</span>
+                        <span className="flex-1">{poi.label}</span>
+                        <span
+                          className="w-3 h-3 rounded-full border border-gray-200"
+                          style={{ backgroundColor: POI_COLORS[poi.key] ?? "#888" }}
+                          aria-hidden="true"
+                        />
                       </label>
                     ))}
                   </div>

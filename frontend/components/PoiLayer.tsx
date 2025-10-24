@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useMap } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
+import { POI_COLORS, POI_LABELS } from "@/components/poi-config";
 
 interface PoiLayerProps {
   poiType: string;
@@ -19,34 +20,6 @@ interface PoiLayerProps {
     subtype?: string | null;
   }) => void;
 }
-
-const POI_LABELS: Record<string, string> = {
-  bike_parking: "Bisiklet Parkı",
-  bus_stop: "Otobüs Durağı",
-  ev_charger: "Elektrikli Araç Şarj",
-  health: "Sağlık Tesisi",
-  kiosk: "Büfe",
-  metro_station: "Metro İstasyonu",
-  micro_mobility_parking: "Mikro Mobilite Parkı",
-  museum: "Müze",
-  theater: "Tiyatro",
-  toilet: "Tuvalet",
-  tram_station: "Tramvay İstasyonu",
-};
-
-const POI_COLORS: Record<string, string> = {
-  bike_parking: "#facc15",
-  bus_stop: "#1d4ed8",
-  ev_charger: "#22c55e",
-  health: "#ef4444",
-  kiosk: "#94a3b8",
-  metro_station: "#16a34a",
-  micro_mobility_parking: "#fb923c",
-  museum: "#0ea5e9",
-  theater: "#ec4899",
-  toilet: "#a855f7",
-  tram_station: "#14b8a6",
-};
 
 export default function PoiLayer({ poiType, selectedPoiId, onSelectPoi }: PoiLayerProps) {
   const { current: mapRef } = useMap();

@@ -278,9 +278,6 @@ def get_pois(poi_type: str, bbox: str | None = None):
     if not features:
         return error_response(message=f"No POIs found for type='{poi_type}'", code=404)
 
-    print("Sample row:", rows[0] if rows else None)
-    print("Geometry type:", type(rows[0]["geometry"]) if rows else None)
-
     return success_response({"type": "FeatureCollection", "features": features})
 
 @app.get("/poi/nearby")

@@ -8,6 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { POI_CATEGORIES } from "@/components/poi-config";
 
 type NearbyPoi = {
   id: string;
@@ -34,29 +35,6 @@ function formatDistance(m?: number) {
   if (m > 1000) return `${(m / 1000).toFixed(1)} km`;
   return `${Math.round(m)} m`;
 }
-
-// Kategori tanımı
-const POI_CATEGORIES: Record<string, { key: string; label: string }[]> = {
-  "Ulaşım": [
-    { key: "bus_stop", label: "Otobüs Durağı" },
-    { key: "metro_station", label: "Metro İstasyonu" },
-    { key: "tram_station", label: "Tramvay İstasyonu" },
-  ],
-  "Altyapı": [
-    { key: "ev_charger", label: "Elektrikli Araç Şarj" },
-    { key: "toilet", label: "Tuvalet" },
-    { key: "bike_parking", label: "Bisiklet Parkı" },
-    { key: "micro_mobility_parking", label: "Mikro Mobilite Parkı" },
-  ],
-  "Kültür & Ticaret": [
-    { key: "museum", label: "Müze" },
-    { key: "theater", label: "Tiyatro" },
-    { key: "kiosk", label: "İHE Büfe" },
-  ],
-  "Sağlık": [
-    { key: "health", label: "Sağlık Tesisi" },
-  ],
-};
 
 export default function NearbyPanel({
   userLocation,
