@@ -229,12 +229,12 @@ export function DirectionsSheet({
   onClose,
 }: DirectionsSidebarProps) {
   const open = isOpen && Boolean(poi);
-  const [viewState, setViewState] = React.useState<"peek" | "expanded">("peek");
+  const [viewState, setViewState] = React.useState<"peek" | "expanded">("expanded");
 
   React.useEffect(() => {
     if (!open) return;
-    setViewState("peek");
-  }, [open, poi?.poi_id, poi?.name]);
+    setViewState("expanded");
+  }, [open, poi?.id, poi?.name]);
 
   const handleSwipeDown = React.useCallback(
     (delta: number) => {
@@ -247,7 +247,6 @@ export function DirectionsSheet({
     [viewState]
   );
 
-  const expandSheet = () => setViewState("expanded");
   const toggleView = () =>
     setViewState((prev) => (prev === "expanded" ? "peek" : "expanded"));
 
@@ -267,10 +266,10 @@ export function DirectionsSheet({
         side="bottom"
         onSwipeDown={handleSwipeDown}
         className={cn(
-          "gap-0 rounded-t-3xl border-t border-gray-200 bg-white px-0 pb-6 transition-[max-height] duration-200",
+          "gap-0 rounded-t-3xl border-t border-gray-200 bg-white px-0 transition-[max-height] duration-200",
           viewState === "expanded"
-            ? "max-h-[80vh] min-h-[55vh]"
-            : "max-h-[55vh] min-h-[28vh]"
+            ? "max-h-[80vh] min-h-[55vh] pb-6"
+            : "max-h-[32vh] pb-4"
         )}
       >
         <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
@@ -283,6 +282,18 @@ export function DirectionsSheet({
               {poi?.district_name ? (
                 <p className="text-xs text-gray-500">{poi.district_name}</p>
               ) : null}
+              {viewState === "peek" && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                    {poi?.poi_type_label || poi?.type}
+                  </span>
+                  {poi?.subtype ? (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                      {poi.subtype}
+                    </span>
+                  ) : null}
+                </div>
+              )}
             </div>
             <button
               onClick={toggleView}
@@ -296,6 +307,30 @@ export function DirectionsSheet({
               )}
             </button>
           </div>
+          {viewState === "peek" && (
+            <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
+              <div className="min-w-0 flex-1">
+                {poi?.address_text ? (
+                  <p className="truncate text-gray-500">{poi.address_text}</p>
+                ) : null}
+                {routeError ? (
+                  <p className="mt-1 text-red-600">{routeError}</p>
+                ) : routeLoading ? (
+                  <p className="mt-1 text-blue-600">Rota hesaplanıyor...</p>
+                ) : null}
+              </div>
+              <div className="text-right">
+                {distanceText ? (
+                  <p className="text-sm font-semibold text-gray-900">{distanceText}</p>
+                ) : null}
+                {durationText ? (
+                  <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                    ETA {durationText}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
         </SheetHeader>
 
         {viewState === "expanded" ? (
@@ -315,85 +350,7 @@ export function DirectionsSheet({
               onClose={onClose}
             />
           </div>
-        ) : (
-          <div className="px-4 pb-6 pt-3 space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-                {poi?.poi_type_label || poi?.type}
-              </span>
-              {poi?.subtype ? (
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
-                  {poi.subtype}
-                </span>
-              ) : null}
-            </div>
-
-            {poi?.address_text ? (
-              <p className="text-xs text-gray-600">{poi.address_text}</p>
-            ) : null}
-
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-gray-500">Ulaşım modu</p>
-              <div className="flex gap-2">
-                {TRAVEL_MODES.map((mode) => (
-                  <button
-                    key={mode.key}
-                    type="button"
-                    onClick={() => onModeChange(mode.key)}
-                    className={`flex-1 rounded-md border px-2 py-2 text-xs font-medium transition ${
-                      activeMode === mode.key
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="mr-1">{mode.icon}</span>
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onRequestRoute(activeMode)}
-              disabled={routeLoading}
-              className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {routeLoading ? "Rota getiriliyor..." : "Rota Al"}
-            </button>
-
-            {routeError ? (
-              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
-                {routeError}
-              </p>
-            ) : null}
-
-            {routeSummary ? (
-              <div className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-800">
-                {distanceText ? <p>Mesafe: {distanceText}</p> : null}
-                {durationText ? <p>Süre: {durationText}</p> : null}
-              </div>
-            ) : null}
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={expandSheet}
-                className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
-              >
-                Detayları Gör
-              </button>
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${poi?.lat},${poi?.lon}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 rounded-md border border-blue-200 bg-white px-3 py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
-              >
-                Google Maps
-              </a>
-            </div>
-          </div>
-        )}
+        ) : null}
       </SheetContent>
     </Sheet>
   );
