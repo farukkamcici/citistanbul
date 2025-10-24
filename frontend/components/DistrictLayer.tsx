@@ -149,13 +149,17 @@ export default function DistrictLayer() {
             />
           </button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="max-h-[70vh] flex flex-col">
-          <SheetHeader className="border-b pb-2">
+        <SheetContent
+          side="bottom"
+          className="max-h-[75vh] flex flex-col rounded-t-3xl border-t border-gray-200 bg-white px-0 pb-6"
+        >
+          <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
+          <SheetHeader className="px-4 pb-3 border-b border-gray-100">
             <SheetTitle className="font-semibold text-gray-900">
               İlçe Yoğunluk Haritası
             </SheetTitle>
           </SheetHeader>
-          <div className="mt-4 px-4 py-2 space-y-3">
+          <div className="mt-2 px-4 space-y-3 overflow-y-auto">
             {METRICS.map((m) => (
               <label
                 key={m.key}
