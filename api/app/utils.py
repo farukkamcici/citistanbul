@@ -62,11 +62,7 @@ def get_secret(key_name: str, default: str | None = None) -> str | None:
     secret_path = Path(f"/run/secrets/{key_name.lower()}")
     if secret_path.exists():
         raw = secret_path.read_text().strip()
-        # handle KEY=value style files too
-        if "=" in raw:
-            _, raw = raw.split("=", 1)
-        return raw.strip()
+        return raw
 
     # 3️⃣ Fallback
     return default
-
