@@ -64,10 +64,21 @@ type ExtendedSheetContentProps = React.ComponentProps<
 > & {
   side?: "top" | "right" | "bottom" | "left"
   onSwipeDown?: (deltaY: number) => boolean | void
+  onSwipeUp?: (deltaY: number) => boolean | void
 }
 
 const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>(
-  ({ className, children, side = "right", onSwipeDown, ...props }, ref) => {
+  (
+    {
+      className,
+      children,
+      side = "right",
+      onSwipeDown,
+      onSwipeUp,
+      ...props
+    },
+    ref
+  ) => {
     const localRef = React.useRef<HTMLDivElement>(null)
     const closeRef = React.useRef<HTMLButtonElement>(null)
     const composedRef = composeRefs(ref, localRef)
@@ -79,6 +90,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>
       let startY = 0
       let currentY = 0
       let dragging = false
+      let direction: "none" | "up" | "down" = "none"
       const CLOSE_THRESHOLD = 120
       const TRIGGER_THRESHOLD = 60
 
@@ -93,42 +105,71 @@ const SheetContent = React.forwardRef<HTMLDivElement, ExtendedSheetContentProps>
         currentY = startY
         dragging = true
         content.style.transition = "none"
+        direction = "none"
       }
 
       const handleTouchMove = (event: TouchEvent) => {
         if (!dragging) return
         currentY = event.touches[0].clientY
         const deltaY = currentY - startY
-        if (deltaY <= 0) {
+        if (deltaY > 0) {
+          direction = "down"
+          event.preventDefault()
+          content.style.transform = `translateY(${deltaY}px)`
+        } else if (deltaY < 0) {
+          direction = "up"
+          if (onSwipeUp) {
+            event.preventDefault()
+            const limited = Math.max(deltaY, -40)
+            content.style.transform = `translateY(${limited}px)`
+          } else {
+            content.style.transform = "translateY(0)"
+          }
+        } else {
+          direction = "none"
           content.style.transform = "translateY(0)"
-          return
         }
-
-        event.preventDefault()
-        content.style.transform = `translateY(${deltaY}px)`
       }
 
       const handleTouchEnd = () => {
         if (!dragging) return
         dragging = false
-        const deltaY = Math.max(0, currentY - startY)
+        const delta = currentY - startY
         content.style.transition = "transform 0.2s ease-out"
 
         let handled = false
-        if (deltaY > TRIGGER_THRESHOLD && onSwipeDown) {
-          handled = onSwipeDown(deltaY) === true
-        }
 
-        if (!handled && deltaY > CLOSE_THRESHOLD) {
-          content.style.transform = "translateY(100%)"
+        if (direction === "down" && delta > 0) {
+          const deltaY = delta
+          if (deltaY > TRIGGER_THRESHOLD && onSwipeDown) {
+            handled = onSwipeDown(deltaY) === true
+          }
+
+          if (!handled && deltaY > CLOSE_THRESHOLD) {
+            content.style.transform = "translateY(100%)"
+            window.setTimeout(() => {
+              closeRef.current?.click()
+            }, 160)
+          } else {
+            content.style.transform = "translateY(0)"
+            window.setTimeout(() => {
+              reset()
+            }, 200)
+          }
+        } else if (direction === "up" && delta < 0) {
+          const deltaY = Math.abs(delta)
+          if (deltaY > TRIGGER_THRESHOLD && onSwipeUp) {
+            handled = onSwipeUp(deltaY) === true
+          }
+          content.style.transform = "translateY(0)"
           window.setTimeout(() => {
-            closeRef.current?.click()
-          }, 160)
+            reset()
+          }, 150)
         } else {
           content.style.transform = "translateY(0)"
           window.setTimeout(() => {
             reset()
-          }, 200)
+          }, 150)
         }
       }
 

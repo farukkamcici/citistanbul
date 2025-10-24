@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { SelectedPoi } from "@/components/SearchBar";
 import {
   TRAVEL_MODES,
@@ -236,6 +236,20 @@ export function DirectionsSheet({
     setViewState("expanded");
   }, [open, poi?.id, poi?.name]);
 
+  const handleHeaderTap = () => {
+    if (viewState === "peek") {
+      setViewState("expanded");
+    }
+  };
+
+  const handleHeaderKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (viewState !== "peek") return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setViewState("expanded");
+    }
+  };
+
   const handleSwipeDown = React.useCallback(
     (delta: number) => {
       if (viewState === "expanded") {
@@ -247,8 +261,16 @@ export function DirectionsSheet({
     [viewState]
   );
 
-  const toggleView = () =>
-    setViewState((prev) => (prev === "expanded" ? "peek" : "expanded"));
+  const handleSwipeUp = React.useCallback(
+    (delta: number) => {
+      if (viewState === "peek") {
+        setViewState("expanded");
+        return true;
+      }
+      return false;
+    },
+    [viewState]
+  );
 
   const distanceText = formatDistance(routeSummary?.distance);
   const durationText = formatDuration(routeSummary?.duration);
@@ -265,6 +287,7 @@ export function DirectionsSheet({
       <SheetContent
         side="bottom"
         onSwipeDown={handleSwipeDown}
+        onSwipeUp={handleSwipeUp}
         className={cn(
           "gap-0 rounded-t-3xl border-t border-gray-200 bg-white px-0 transition-[max-height] duration-200",
           viewState === "expanded"
@@ -273,7 +296,17 @@ export function DirectionsSheet({
         )}
       >
         <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-gray-300" />
-        <SheetHeader className="border-b border-gray-100 px-4 pt-2 pb-3">
+        <SheetHeader
+          className={cn(
+            "border-b border-gray-100 px-4 pt-2 pb-3 transition",
+            viewState === "peek" ? "cursor-pointer" : ""
+          )}
+          onClick={handleHeaderTap}
+          onKeyDown={handleHeaderKeyDown}
+          role={viewState === "peek" ? "button" : undefined}
+          tabIndex={viewState === "peek" ? 0 : -1}
+          aria-expanded={viewState === "expanded"}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <SheetTitle className="truncate text-base font-semibold text-gray-900">
@@ -295,17 +328,6 @@ export function DirectionsSheet({
                 </div>
               )}
             </div>
-            <button
-              onClick={toggleView}
-              className="rounded-full border border-gray-200 bg-white p-2 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
-              aria-label={viewState === "expanded" ? "Paneli küçült" : "Paneli genişlet"}
-            >
-              {viewState === "expanded" ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronUp className="h-4 w-4" />
-              )}
-            </button>
           </div>
           {viewState === "peek" && (
             <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
@@ -322,7 +344,11 @@ export function DirectionsSheet({
               <div className="text-right">
                 {distanceText ? (
                   <p className="text-sm font-semibold text-gray-900">{distanceText}</p>
-                ) : null}
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    {routeLoading ? "" : "Rota hazır değil"}
+                  </p>
+                )}
                 {durationText ? (
                   <p className="text-[11px] uppercase tracking-wide text-gray-500">
                     ETA {durationText}
